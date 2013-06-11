@@ -8,38 +8,44 @@ Tulip API for the Qt Event-Loop
 Usage
 =====
 
-import quamash
-import tulip
-import time
+.. code:: python
 
-from PyQt4 import QtCore, QtGui
-# - or - #
-from PySide import QtCore, QtGui
+    import quamash
+    import tulip
+    import time
 
-def identity(x):
-	time.sleep(10)
-	return x
+    from PyQt4 import QtCore, QtGui
+    # - or - #
+    from PySide import QtCore, QtGui
 
-@quamash.task
-def my_task(loop, executor):
-	for x in range(5):
-		y = yield from loop.run_in_executor(executor, identity, x)
-		assert x == y
+    def identity(x):
+        time.sleep(10)
+        return x
 
-if __name__ == '__main__':
-	app = QApplication
-	loop = quamash.QEventLoop(app)
+    @quamash.task
+    def my_task(loop, executor):
+        for x in range(5):
+            y = yield from loop.run_in_executor(executor, identity, x)
+            assert x == y
 
-	win = QtGui.QMainWindow()
-	win.show()
+        loop.stop()
 
-	with loop:
-		
+    if __name__ == '__main__':
+        app = QApplication
+        loop = quamash.QEventLoop(app)
+        executor = quamash.QThreadExecutor(5)
+
+        win = QtGui.QMainWindow()
+        win.show()
+
+        with loop, executor:
+            loop.call_soon(my_task, loop, executor)
+            loop.run_forever()
 
 
 Name
 ====
-Tulip related projects are being named after other flowers, Quamash starts with a "Q".
+Tulip related projects are being named after other flowers, Quamash is one of the few flowers that starts with a "Q".
 
 License
 =======
