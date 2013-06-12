@@ -3,7 +3,7 @@
 # © 2013 Mark Harviston <mark.harviston@gmail.com>
 # BSD License
 """
-PEP
+Implementation of the PEP 3156 Event-Loop with Qt
 """
 __author__ = 'Mark Harviston <mark.harviston@gmail.com>'
 __version__ = '0.1'
@@ -86,6 +86,44 @@ class QThreadExecutor(QtCore.QObject):
 		self.shutdown()
 
 
+def easycallback(fn):
+	"""
+	Decorator that wraps a callback in a signal, and packs & unpacks arguments,
+	Makes the wrapped function effectively threadsafe. If you call the function
+	from one thread, it will be executed in the thread the QObject has affinity
+	with.
+
+	Remember: only objects that inherit from QObject can support signals/slots
+
+	>>> class MyObject(QObject):
+	>>>     @easycallback
+	>>>     def mycallback(self):
+	>>>         dostuff()
+	>>>
+	>>> myobject = MyObject()
+	>>>
+	>>> @task
+	>>> def mytask():
+	>>>     myobject.mycallback()
+	>>>
+	>>> loop = QEventLoop()
+	>>> with loop:
+	>>>     loop.call_soon(mytask)
+	>>>     loop.run_forever()
+	"""
+	signal = QtCore.pyqtSignal(object, tuple, dict)
+
+	def out_wrapper(self, args, kwargs):
+		return fn(self, *args, **kwargs)
+
+	@wraps(fn)
+	def in_wrapper(self, *args, **kwargs):
+		return signal.emit(self, args, kwargs)
+
+	signal.connect(out_wrapper)
+	return in_wrapper
+
+
 class QEventLoop(QtCore.QObject, GuiEventLoop):
 	"""
 	Implementation of tulip event loop that uses the Qt Event loop
@@ -153,6 +191,7 @@ class QEventLoop(QtCore.QObject, GuiEventLoop):
 		super().stop()
 		self.app.exit()
 
+
 class Cancellable(object):
 	def __init__(self, timer, loop):
 		self.timer = timer
@@ -161,40 +200,3 @@ class Cancellable(object):
 	def cancel(self):
 		self.loop.remove(timer)
 		return self.timer.stop()
-
-def easycallback(fn):
-	"""
-	Decorator that wraps a callback in a signal, and packs & unpacks arguments,
-	Makes the wrapped function effectively threadsafe. If you call the function
-	from one thread, it will be executed in the thread the QObject has affinity
-	with.
-
-	Remember: only objects that inherit from QObject can support signals/slots
-
-	>>> class MyObject(QObject):
-	>>>     @easycallback
-	>>>     def mycallback(self):
-	>>>         dostuff()
-	>>>
-	>>> myobject = MyObject()
-	>>>
-	>>> @task
-	>>> def mytask():
-	>>>     myobject.mycallback()
-	>>>
-	>>> loop = QEventLoop()
-	>>> with loop:
-	>>>     loop.call_soon(mytask)
-	>>>     loop.run_forever()
-	"""
-	signal = QtCore.pyqtSignal(object, tuple, dict)
-
-	def out_wrapper(self, args, kwargs):
-		return fn(self, *args, **kwargs)
-
-	@wraps(fn)
-	def in_wrapper(self, *args, **kwargs):
-		return signal.emit(self, args, kwargs)
-
-	signal.connect(out_wrapper)
-	return in_wrapper

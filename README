@@ -1,8 +1,8 @@
 =======
 Quamash
 =======
-Implementation of PEP 3156 Event-Loop with Qt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Implementation of the PEP 3156 Event-Loop with Qt
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>
 
 Usage
