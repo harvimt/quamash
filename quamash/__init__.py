@@ -3,10 +3,11 @@
 # © 2013 Mark Harviston <mark.harviston@gmail.com>
 # BSD License
 """
-Tulip hooked up to the Qt Event Loop several utilities
+PEP
 """
-__author__ = 'Mark Harviston <mark.harviston@gmail.com>
+__author__ = 'Mark Harviston <mark.harviston@gmail.com>'
 __version__ = '0.1'
+__license__ = 'BSD 2 Clause License'
 
 import tulip as async
 
@@ -19,7 +20,7 @@ import feedparser
 from queue import Queue
 from concurrent.futures import Future
 
-from guievents import GuiEventLoop
+from .guievents import GuiEventLoop
 
 try:
 	from PySide import QtGui, QtCore

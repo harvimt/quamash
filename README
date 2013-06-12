@@ -1,8 +1,8 @@
 =======
 Quamash
 =======
-Tulip API for the Qt Event-Loop
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Implementation of PEP 3156 Event-Loop with Qt
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>
 
 Usage
@@ -49,5 +49,4 @@ Tulip related projects are being named after other flowers, Quamash is one of th
 
 License
 =======
-BSD 3 Clause License
-
+BSD 2 Clause License
