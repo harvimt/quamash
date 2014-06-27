@@ -1,7 +1,7 @@
 =======
 Quamash
 =======
-Implementation of the [PEP 3156 Event-Loop](http://legacy.python.org/dev/peps/pep-3156/) with Qt
+Implementation of the PEP 3156 Event-Loop with Qt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>
 
