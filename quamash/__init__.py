@@ -24,6 +24,7 @@ try:
     from PySide import QtCore
 except ImportError:
     from PyQt5 import QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 _logger = logging.getLogger(__name__)
 
@@ -144,7 +145,7 @@ def _easycallback(fn):
         return signaler.signal.emit(self, args, kwargs)
 
     class Signaler(QtCore.QObject):
-        signal = QtCore.pyqtSignal(object, tuple, dict)
+        signal = QtCore.Signal(object, tuple, dict)
 
     signaler = Signaler()
     signaler.signal.connect(lambda self, args, kwargs: fn(self, *args, **kwargs))
