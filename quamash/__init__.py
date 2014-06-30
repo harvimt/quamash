@@ -14,7 +14,6 @@ import sys
 import os
 import asyncio
 from asyncio import futures
-import asyncio.events
 import socket
 import time
 from functools import partial, wraps
@@ -172,7 +171,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
     def run_until_complete(self, future):
         """Run until Future is complete."""
         future = asyncio.async(future, loop=self)
-        future.add_done_callback(self.stop)
+        future.add_done_callback(lambda *args: self.stop)
         try:
             self.run_forever()
         finally:
@@ -184,6 +183,10 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
     def stop(self):
         """Stop event loop."""
+        if not self.__is_running:
+            _logger.debug('Not running')
+            return
+
         _logger.debug('Stopping eventloop...')
         self.__app.exit()
         _logger.debug('Stopped eventloop')
@@ -202,11 +205,13 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
     def call_later(self, delay, callback, *args):
         """Register callback to be invoked after a certain delay."""
+        if asyncio.iscoroutinefunction(callback):
+            raise TypeError("coroutines cannot be used with call_later")
         if not callable(callback):
             raise TypeError('callback must be callable: {}'.format(type(callback).__name__))
 
-        _logger.debug('Invoking callback {} after {} seconds'.format(
-            callback, delay
+        _logger.debug('Invoking callback {} with arguments {} after {} second(s)'.format(
+            callback, args, delay
         ))
 
         def upon_timeout():
@@ -241,9 +246,9 @@ class QEventLoop(QtCore.QObject, _baseclass):
         self.call_soon(callback, *args)
 
     def run_in_executor(self, executor, callback, *args):
-        if isinstance(callback, events.Handle):
+        if isinstance(callback, asyncio.Handle):
             assert not args
-            assert not isinstance(callback, events.TimerHandle)
+            assert not isinstance(callback, asyncio.TimerHandle)
             if callback.cancelled:
                 f = futures.Future()
                 f.set_result(None)
