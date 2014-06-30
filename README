@@ -14,27 +14,26 @@ Usage
     import time
     import asyncio
     import sys
-    import logging
 
     try:
         from PyQt5.QtWidgets import QApplication, QMainWindow
     except ImportError:
         from PySide.QtGui import QApplication, QMainWindow
 
+
     def identity(x):
         time.sleep(10)
         return x
 
+
     @asyncio.coroutine
-    def my_task(loop):
+    def my_task():
         for x in range(5):
             y = yield from loop.run_in_executor(None, identity, x)
             assert x == y
 
         loop.stop()
 
-    logging.basicConfig(level=logging.DEBUG)
-    _logger = logging.getLogger('App')
 
     if __name__ == '__main__':
         app = QApplication(sys.argv)
@@ -44,9 +43,7 @@ Usage
 
         loop = quamash.QEventLoop(app)
         with loop:
-            loop.call_soon(my_task, loop)
-
-            loop.run_forever()
+            loop.run_until_complete(my_task())
 
 
 Name
