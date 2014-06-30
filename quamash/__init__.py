@@ -198,15 +198,18 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
     def run_until_complete(self, future):
         """Run until Future is complete."""
+        self._logger.debug('Running {} until complete'.format(future))
         future = asyncio.async(future, loop=self)
-        future.add_done_callback(lambda *args: self.stop)
+        stop = lambda *args: self.stop()
+        future.add_done_callback(stop)
         try:
             self.run_forever()
         finally:
-            future.remove_done_callback(self.stop)
+            future.remove_done_callback(stop)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
 
+        self._logger.debug('Future {} finished running'.format(future))
         return future.result()
 
     def stop(self):
