@@ -211,6 +211,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
         def upon_timeout():
             self.__timers.remove(timer)
+            _logger.debug('Callback timer fired, calling {} with args {}'.format(callback, args))
             callback(*args)
 
         timer = QtCore.QTimer(self.__app)
