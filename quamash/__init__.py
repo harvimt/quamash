@@ -13,14 +13,11 @@ __license__ = 'BSD 2 Clause License'
 import sys
 import os
 import asyncio
-from asyncio import futures
-import socket
 import time
-from functools import partial, wraps
+from functools import wraps
 import logging
 from queue import Queue
 from concurrent.futures import Future
-import subprocess
 import threading
 
 try:
@@ -111,7 +108,7 @@ class QThreadExecutor(QtCore.QObject):
             w.stop()
 
     def __enter__(self, *args):
-        pass
+        return self
 
     def __exit__(self, *args):
         self.close()
@@ -193,7 +190,6 @@ class QEventLoop(QtCore.QObject, _baseclass):
             return rslt
         finally:
             self.__io_event_loop.call_soon_threadsafe(self.__io_event_loop.stop)
-            super(QEventLoop, self).stop()
             self.__is_running = False
 
     def run_until_complete(self, future):
@@ -289,7 +285,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
             assert not args
             assert not isinstance(callback, asyncio.TimerHandle)
             if callback.cancelled:
-                f = futures.Future()
+                f = asyncio.Future()
                 f.set_result(None)
                 return f
             callback, args = callback.callback, callback.args
@@ -387,6 +383,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
     def __enter__(self):
         asyncio.set_event_loop(self)
+        return self
 
     def __exit__(self, *args):
         try:
