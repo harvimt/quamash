@@ -29,6 +29,7 @@ Usage
     @asyncio.coroutine
     def my_task():
         for x in range(5):
+            # Execute function in thread since it blocks
             y = yield from loop.run_in_executor(None, identity, x)
             assert x == y
 

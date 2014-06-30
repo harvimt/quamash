@@ -31,28 +31,51 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 
+def _with_logger(cls):
+    """Class decorator to add a logger to a class."""
+    attr_name = '_logger'
+    cls_name = cls.__qualname__
+    module = cls.__module__
+    if module is not None:
+        cls_name = module + '.' + cls_name
+    setattr(cls, attr_name, logging.getLogger(cls_name))
+    return cls
+
+
+@_with_logger
 class _QThreadWorker(QtCore.QThread):
     """
     Read from the queue.
 
     For use by the QThreadExecutor
     """
-    def __init__(self, queue):
+    def __init__(self, queue, num):
         self.__queue = queue
         self.__stop = False
+        self.__num = num
         super().__init__()
 
     def run(self):
         while not self.__stop:
-            future, fn, args, kwargs = self.__queue.get()
+            future, callback, args, kwargs = self.__queue.get()
+            self._logger.debug('#{} got callback {} with args {} and kwargs {} from queue'
+                .format(self.__num, callback, args, kwargs))
             if future.set_running_or_notify_cancel():
-                r = fn(*args, **kwargs)
+                self._logger.debug('Invoking callback')
+                r = callback(*args, **kwargs)
+                self._logger.debug('Setting Future result: {}'.format(r))
                 future.set_result(r)
+            else:
+                self._logger.debug('Future was cancelled')
+
+        self._logger.debug('#{} stopped'.format(self.__num))
 
     def stop(self):
+        self._logger.debug('#{} stopping...'.format(self.__num))
         self.__stop = True
 
 
+@_with_logger
 class QThreadExecutor(QtCore.QObject):
     """
     ThreadExecutor that produces QThreads
@@ -67,19 +90,23 @@ class QThreadExecutor(QtCore.QObject):
         super().__init__(parent)
         self.__max_workers = max_workers
         self.__queue = Queue()
-        self.__workers = [_QThreadWorker(self.__queue) for i in range(max_workers)]
+        self.__workers = [_QThreadWorker(self.__queue, i+1) for i in range(max_workers)]
         for w in self.__workers:
             w.start()
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, callback, *args, **kwargs):
         future = Future()
-        self.__queue.put((future, fn, args, kwargs))
+        self._logger.debug(
+            'Submitting callback {} with args {} and kwargs {} to thread worker queue'
+            .format(callback, args, kwargs))
+        self.__queue.put((future, callback, args, kwargs))
         return future
 
     def map(self, func, *iterables, timeout=None):
         raise NotImplemented("use as_completed on the event loop")
 
     def close(self):
+        self._logger.debug('Closing')
         for w in self.__workers:
             w.stop()
 
@@ -130,6 +157,7 @@ def _easycallback(fn):
 _baseclass = asyncio.ProactorEventLoop if os.name == 'nt' else asyncio.SelectorEventLoop
 
 
+@_with_logger
 class QEventLoop(QtCore.QObject, _baseclass):
     """
     Implementation of asyncio event loop that uses the Qt Event loop
@@ -158,10 +186,10 @@ class QEventLoop(QtCore.QObject, _baseclass):
     def run_forever(self):
         """Run eventloop forever."""
         self.__is_running = True
-        _logger.debug('Starting Qt event loop')
+        self._logger.debug('Starting Qt event loop')
         try:
             rslt = self.__app.exec_()
-            _logger.debug('Qt event loop ended with result {}'.format(rslt))
+            self._logger.debug('Qt event loop ended with result {}'.format(rslt))
             return rslt
         finally:
             self.__io_event_loop.call_soon_threadsafe(self.__io_event_loop.stop)
@@ -184,12 +212,12 @@ class QEventLoop(QtCore.QObject, _baseclass):
     def stop(self):
         """Stop event loop."""
         if not self.__is_running:
-            _logger.debug('Not running')
+            self._logger.debug('Not running')
             return
 
-        _logger.debug('Stopping eventloop...')
+        self._logger.debug('Stopping eventloop...')
         self.__app.exit()
-        _logger.debug('Stopped eventloop')
+        self._logger.debug('Stopped eventloop')
 
     def is_running(self):
         """Is event loop running?"""
@@ -210,13 +238,15 @@ class QEventLoop(QtCore.QObject, _baseclass):
         if not callable(callback):
             raise TypeError('callback must be callable: {}'.format(type(callback).__name__))
 
-        _logger.debug('Invoking callback {} with arguments {} after {} second(s)'.format(
-            callback, args, delay
-        ))
+        self._logger.debug(
+            'Registering callback {} to be invoked with arguments {} after {} second(s)'.format(
+                callback, args, delay
+            ))
 
         def upon_timeout():
             self.__timers.remove(timer)
-            _logger.debug('Callback timer fired, calling {} with args {}'.format(callback, args))
+            self._logger.debug('Callback timer fired, calling {} with args {}'.format(
+                callback, args))
             callback(*args)
 
         timer = QtCore.QTimer(self.__app)
@@ -246,6 +276,12 @@ class QEventLoop(QtCore.QObject, _baseclass):
         self.call_soon(callback, *args)
 
     def run_in_executor(self, executor, callback, *args):
+        """Run callback in executor.
+
+        If no executor is provided, the default executor will be used, which defers execution to
+        a background thread.
+        """
+        self._logger.debug('Running callback {} with args {} in executor'.format(callback, args))
         if isinstance(callback, asyncio.Handle):
             assert not args
             assert not isinstance(callback, asyncio.TimerHandle)
@@ -258,7 +294,10 @@ class QEventLoop(QtCore.QObject, _baseclass):
         if executor is None:
             executor = self.__default_executor
             if executor is None:
+                self._logger.debug('Creating default executor')
                 executor = self.__default_executor = QThreadExecutor()
+            self._logger.debug('Using default executor')
+
         return asyncio.wrap_future(executor.submit(callback, *args))
 
     def set_default_executor(self, executor):
@@ -287,7 +326,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
         context parameter has the same meaning as in
         `call_exception_handler()`.
         """
-        _logger.debug('Executing default exception handler')
+        self._logger.debug('Executing default exception handler')
         message = context.get('message')
         if not message:
             message = 'Unhandled exception in event loop'
@@ -389,7 +428,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
     def __log_error(*args, **kwds):
         # In some cases, the error method itself fails, don't have a lot of options in that case
         try:
-            _logger.error(*args, **kwds)
+            self._logger.error(*args, **kwds)
         except:
             sys.stderr.write('{}, {}\n'.format(args, kwds))
 
