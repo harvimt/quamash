@@ -26,25 +26,16 @@ except ImportError:
     from PyQt5 import QtCore
     QtCore.Signal = QtCore.pyqtSignal
 
+from ._common import with_logger
+
 _logger = logging.getLogger(__name__)
 
 
-def _with_logger(cls):
-    """Class decorator to add a logger to a class."""
-    attr_name = '_logger'
-    cls_name = cls.__qualname__
-    module = cls.__module__
-    if module is not None:
-        cls_name = module + '.' + cls_name
-    setattr(cls, attr_name, logging.getLogger(cls_name))
-    return cls
-
-
-@_with_logger
+@with_logger
 class _EventPoller(QtCore.QObject):
     """Polling of events in separate thread."""
     sig_events = QtCore.Signal(list)
-    
+
     def __init__(self, selector):
         super(_EventPoller, self).__init__()
         self.__semaphore = threading.Semaphore(0)
@@ -67,14 +58,16 @@ class _EventPoller(QtCore.QObject):
         self.__semaphore.release()
 
         while not self.__canceled:
+            self._logger.info('Polling for events')
             events = self.__selector.select(0.01)
+            self._logger.info('Got events {}'.format(events))
             if events:
                 self.sig_events.emit(events)
 
         self.__semaphore.release()
 
 
-@_with_logger
+@with_logger
 class _QThreadWorker(QtCore.QThread):
     """
     Read from the queue.
@@ -107,7 +100,7 @@ class _QThreadWorker(QtCore.QThread):
         self.__stop = True
 
 
-@_with_logger
+@with_logger
 class QThreadExecutor(QtCore.QObject):
     """
     ThreadExecutor that produces QThreads
@@ -187,74 +180,16 @@ def _easycallback(fn):
 
 
 if os.name == 'nt':
-    import _winapi
-    from asyncio import windows_events
-    _baseclass = asyncio.ProactorEventLoop
-
-    @_with_logger
-    class _IocpProactor(windows_events.IocpProactor):
-        def __init__(self):
-            self.__events = []
-            super(_IocpProactor, self).__init__()
-
-        def select(self, timeout=None):
-            """Override in order to handle events in a threadsafe manner."""
-            if not self.__events:
-                self._poll(timeout)
-            tmp = self.__events
-            self.__events = []
-            return tmp
-
-        def close(self):
-            self._logger.debug('Closing')
-            super(_IocpProactor, self).close()
-
-        def _poll(self, timeout=None):
-            """Override in order to handle events in a threadsafe manner."""
-            import math
-            from asyncio import _overlapped
-            INFINITE = 0xffffffff
-
-            if timeout is None:
-                ms = INFINITE
-            elif timeout < 0:
-                raise ValueError("negative timeout")
-            else:
-                # GetQueuedCompletionStatus() has a resolution of 1 millisecond,
-                # round away from zero to wait *at least* timeout seconds.
-                ms = math.ceil(timeout * 1e3)
-                if ms >= INFINITE:
-                    raise ValueError("timeout too big")
-
-            while True:
-                self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
-                    ms, threading.get_ident()))
-                status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
-
-                if status is None:
-                    break
-                err, transferred, key, address = status
-                try:
-                    f, ov, obj, callback = self._cache.pop(address)
-                except KeyError:
-                    # key is either zero, or it is used to return a pipe
-                    # handle which should be closed to avoid a leak.
-                    if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
-                        _winapi.CloseHandle(key)
-                    ms = 0
-                    continue
-
-                if obj in self._stopped_serving:
-                    f.cancel()
-                elif not f.cancelled():
-                    self.__events.append((f, callback, transferred, key, ov))
-
-                ms = 0
+    from . import _windows
+    _baseclass = _windows.baseclass
+    _selector_cls = _windows.selector_cls
 else:
-    _baseclass = asyncio.SelectorEventLoop
+    from . import _unix
+    _baseclass = _unix.baseclass
+    _selector_cls = _unix.selector_cls
 
 
-@_with_logger
+@with_logger
 class QEventLoop(QtCore.QObject, _baseclass):
     """
     Implementation of asyncio event loop that uses the Qt Event loop
@@ -277,8 +212,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
         self.__exception_handler = None
 
         super(QEventLoop, self).__init__()
-        baseclass_args = (_IocpProactor(),) if os.name == 'nt' else ()
-        _baseclass.__init__(self, *baseclass_args)
+        _baseclass.__init__(self, _selector_cls())
 
         self.__event_poller = _EventPoller(self._selector)
         self.__event_poller.sig_events.connect(self.__on_events)
