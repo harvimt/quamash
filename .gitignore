@@ -35,5 +35,4 @@ nosetests.xml
 .pydevproject
 
 # IDEA
-/.idea/workspace.xml
-/.idea/tasks.xml
+/.idea/
