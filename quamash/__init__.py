@@ -67,7 +67,7 @@ class _EventPoller(QtCore.QObject):
         self.__semaphore.release()
 
         while not self.__canceled:
-            events = self.__selector.select(0.1)
+            events = self.__selector.select(0.01)
             if events:
                 self.sig_events.emit(events)
 
