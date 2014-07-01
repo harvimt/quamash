@@ -14,41 +14,41 @@ Usage
 
 .. code:: python
 
-    import quamash
-    import time
-    import asyncio
-    import sys
+	import quamash
+	import time
+	import asyncio
+	import sys
 
-    try:
-        from PyQt5.QtWidgets import QApplication, QMainWindow
-    except ImportError:
-        from PySide.QtGui import QApplication, QMainWindow
-
-
-    def identity(x):
-        time.sleep(10)
-        return x
+	try:
+		from PyQt5.QtWidgets import QApplication, QMainWindow
+	except ImportError:
+		from PySide.QtGui import QApplication, QMainWindow
 
 
-    @asyncio.coroutine
-    def my_task():
-        for x in range(5):
-            # Execute function in thread since it blocks
-            y = yield from loop.run_in_executor(None, identity, x)
-            assert x == y
-
-        loop.stop()
+	def identity(x):
+		time.sleep(10)
+		return x
 
 
-    if __name__ == '__main__':
-        app = QApplication(sys.argv)
+	@asyncio.coroutine
+	def my_task():
+		for x in range(5):
+			# Execute function in thread since it blocks
+			y = yield from loop.run_in_executor(None, identity, x)
+			assert x == y
 
-        win = QMainWindow()
-        win.show()
+		loop.stop()
 
-        loop = quamash.QEventLoop(app)
-        with loop:
-            loop.run_until_complete(my_task())
+
+	if __name__ == '__main__':
+		app = QApplication(sys.argv)
+
+		win = QMainWindow()
+		win.show()
+
+		loop = quamash.QEventLoop(app)
+		with loop:
+			loop.run_until_complete(my_task())
 
 Testing
 =======
