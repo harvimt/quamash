@@ -4,9 +4,9 @@ import logging
 import sys
 import locale
 try:
-    from PyQt5.QtWidgets import QApplication
+	from PyQt5.QtWidgets import QApplication
 except ImportError:
-    from PySide.QtGui import QApplication
+	from PySide.QtGui import QApplication
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -14,66 +14,66 @@ import quamash
 
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+					format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 
 
 class _SubprocessProtocol(asyncio.SubprocessProtocol):
-    def __init__(self, *args, **kwds):
-        super(_SubprocessProtocol, self).__init__(*args, **kwds)
-        self.received_stdout = None
+	def __init__(self, *args, **kwds):
+		super(_SubprocessProtocol, self).__init__(*args, **kwds)
+		self.received_stdout = None
 
-    def pipe_data_received(self, fd, data):
-        text = data.decode(locale.getpreferredencoding(False))
-        if fd == 1:
-            self.received_stdout = text.strip()
+	def pipe_data_received(self, fd, data):
+		text = data.decode(locale.getpreferredencoding(False))
+		if fd == 1:
+			self.received_stdout = text.strip()
 
-    def process_exited(self):
-        asyncio.get_event_loop().stop()
+	def process_exited(self):
+		asyncio.get_event_loop().stop()
 
 
 @pytest.fixture
 def loop(request):
-    app = QApplication([])
-    lp = quamash.QEventLoop(app)
-    asyncio.set_event_loop(lp)
+	app = QApplication([])
+	lp = quamash.QEventLoop(app)
+	asyncio.set_event_loop(lp)
 
-    def fin():
-        try:
-            lp.close()
-        finally:
-            asyncio.set_event_loop(None)
+	def fin():
+		try:
+			lp.close()
+		finally:
+			asyncio.set_event_loop(None)
 
-    request.addfinalizer(fin)
-    return lp
+	request.addfinalizer(fin)
+	return lp
 
 
 class TestQEventLoop:
-    def test_can_run_tasks_in_default_executor(self, loop):
-        """Verify that tasks can be run in default (threaded) executor."""
-        def blocking_func():
-            nonlocal was_invoked
-            was_invoked = True
+	def test_can_run_tasks_in_default_executor(self, loop):
+		"""Verify that tasks can be run in default (threaded) executor."""
+		def blocking_func():
+			nonlocal was_invoked
+			was_invoked = True
 
-        @asyncio.coroutine
-        def blocking_task():
-            yield from loop.run_in_executor(None, blocking_func)
+		@asyncio.coroutine
+		def blocking_task():
+			yield from loop.run_in_executor(None, blocking_func)
 
-        was_invoked = False
-        loop.run_until_complete(blocking_task())
+		was_invoked = False
+		loop.run_until_complete(blocking_task())
 
-        assert was_invoked
+		assert was_invoked
 
-    def test_can_execute_subprocess(self, loop):
-        transport, protocol = loop.run_until_complete(loop.subprocess_exec(
-            _SubprocessProtocol, 'python', '-c', 'print(\'Hello async world!\')'))
-        loop.run_forever()
-        assert transport.get_returncode() == 0
-        assert protocol.received_stdout == 'Hello async world!'
+	def test_can_execute_subprocess(self, loop):
+		transport, protocol = loop.run_until_complete(loop.subprocess_exec(
+			_SubprocessProtocol, 'python', '-c', 'print(\'Hello async world!\')'))
+		loop.run_forever()
+		assert transport.get_returncode() == 0
+		assert protocol.received_stdout == 'Hello async world!'
 
-    def test_can_function_as_context_manager(self):
-        app = QApplication([])
+	def test_can_function_as_context_manager(self):
+		app = QApplication([])
 
-        with quamash.QEventLoop(app) as loop:
-            assert isinstance(loop, quamash.QEventLoop)
-            loop.call_soon(loop.stop)
-            loop.run_forever()
+		with quamash.QEventLoop(app) as loop:
+			assert isinstance(loop, quamash.QEventLoop)
+			loop.call_soon(loop.stop)
+			loop.run_forever()
