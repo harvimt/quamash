@@ -5,6 +5,10 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>
 
+Requirements
+============
+Quamash requires Python 3.4 and either PyQt 5 or PySide.
+
 Usage
 =====
 
@@ -46,9 +50,14 @@ Usage
         with loop:
             loop.run_until_complete(my_task())
 
+Testing
+=======
+Quamash is tested with pytest; in order to run the test suite, just execute py.test on the
+commandline. The tests themselves are beneath the 'tests' directory.
 
 Name
 ====
-Tulip related projects are being named after other flowers, Quamash is one of the few flowers that starts with a "Q".
+Tulip related projects are being named after other flowers, Quamash is one of the few flowers that
+starts with a "Q".
 
 .. _`PEP 3156`: http://legacy.python.org/dev/peps/pep-3156/

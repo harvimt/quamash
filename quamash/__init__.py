@@ -13,6 +13,7 @@ __license__ = 'BSD 2 Clause License'
 import sys
 import os
 import asyncio
+from asyncio import windows_events
 import time
 from functools import wraps
 import logging
@@ -38,6 +39,101 @@ def _with_logger(cls):
         cls_name = module + '.' + cls_name
     setattr(cls, attr_name, logging.getLogger(cls_name))
     return cls
+
+
+@_with_logger
+class _IocpProactor(windows_events.IocpProactor):
+    def __init__(self):
+        self.__events = []
+        super(_IocpProactor, self).__init__()
+
+    def select(self, timeout=None):
+        """Override in order to handle events in a threadsafe manner."""
+        if not self.__events:
+            self._poll(timeout)
+        tmp = self.__events
+        self.__events = []
+        return tmp
+
+    def close(self):
+        self._logger.debug('Closing')
+        super(_IocpProactor, self).close()
+
+    def _poll(self, timeout=None):
+        """Override in order to handle events in a threadsafe manner."""
+        import math
+        from asyncio import _overlapped
+        INFINITE = 0xffffffff
+
+        if timeout is None:
+            ms = INFINITE
+        elif timeout < 0:
+            raise ValueError("negative timeout")
+        else:
+            # GetQueuedCompletionStatus() has a resolution of 1 millisecond,
+            # round away from zero to wait *at least* timeout seconds.
+            ms = math.ceil(timeout * 1e3)
+            if ms >= INFINITE:
+                raise ValueError("timeout too big")
+
+        while True:
+            self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
+                ms, threading.get_ident()))
+            status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
+
+            if status is None:
+                break
+            err, transferred, key, address = status
+            try:
+                f, ov, obj, callback = self._cache.pop(address)
+            except KeyError:
+                # key is either zero, or it is used to return a pipe
+                # handle which should be closed to avoid a leak.
+                if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
+                    _winapi.CloseHandle(key)
+                ms = 0
+                continue
+
+            if obj in self._stopped_serving:
+                f.cancel()
+            elif not f.cancelled():
+                self.__events.append((f, callback, transferred, key, ov))
+
+            ms = 0
+
+
+@_with_logger
+class _EventPoller(QtCore.QObject):
+    """Polling of events in separate thread."""
+    sig_events = QtCore.Signal(list)
+    
+    def __init__(self, selector):
+        super(_EventPoller, self).__init__()
+        self.__semaphore = threading.Semaphore(0)
+        self.__selector = selector
+
+    def start(self):
+        self.__canceled = False
+        self._logger.debug('Starting')
+        threading.Thread(target=self.__run).start()
+        # Wait for thread to start
+        self.__semaphore.acquire()
+
+    def stop(self):
+        self._logger.debug('Stopping')
+        self.__canceled = True
+        # Wait for thread to end
+        self.__semaphore.acquire()
+
+    def __run(self):
+        self.__semaphore.release()
+
+        while not self.__canceled:
+            events = self.__selector.select(0.1)
+            if events:
+                self.sig_events.emit(events)
+
+        self.__semaphore.release()
 
 
 @_with_logger
@@ -152,7 +248,11 @@ def _easycallback(fn):
     return in_wrapper
 
 
-_baseclass = asyncio.ProactorEventLoop if os.name == 'nt' else asyncio.SelectorEventLoop
+if os.name == 'nt':
+    _baseclass = asyncio.ProactorEventLoop
+    import _winapi
+else:
+    _baseclass = asyncio.SelectorEventLoop
 
 
 @_with_logger
@@ -176,22 +276,39 @@ class QEventLoop(QtCore.QObject, _baseclass):
         self.__debug_enabled = False
         self.__default_executor = None
         self.__exception_handler = None
-        
-        super().__init__()
 
-        self.__start_io_event_loop()
+        super(QEventLoop, self).__init__()
+        baseclass_args = (_IocpProactor(),) if os.name == 'nt' else ()
+        _baseclass.__init__(self, *baseclass_args)
+
+        self.__event_poller = _EventPoller(self._selector)
+        self.__event_poller.sig_events.connect(self.__on_events)
 
     def run_forever(self):
         """Run eventloop forever."""
+        def stop_io_event_loop():
+            self.__io_event_loop.stop()
+            self._logger.debug('IO event loop stopped')
+            semaphore.release()
+
+        self.__start_io_event_loop()
+
+        semaphore = threading.Semaphore(0)
         self.__is_running = True
         self._logger.debug('Starting Qt event loop')
         try:
+            self._logger.debug('Starting event poller')
+            self.__event_poller.start()
             rslt = self.__app.exec_()
             self._logger.debug('Qt event loop ended with result {}'.format(rslt))
             return rslt
         finally:
-            self.__io_event_loop.call_soon_threadsafe(self.__io_event_loop.stop)
-            self.__is_running = False
+            self._logger.debug('Stopping event poller')
+            self.__event_poller.stop()
+            self._logger.debug('Stopping IO event loop...')
+            self.__io_event_loop.call_soon_threadsafe(stop_io_event_loop)
+            with semaphore:
+                self.__is_running = False
 
     def run_until_complete(self, future):
         """Run until Future is complete."""
@@ -239,7 +356,8 @@ class QEventLoop(QtCore.QObject, _baseclass):
             raise TypeError('callback must be callable: {}'.format(type(callback).__name__))
 
         self._logger.debug(
-            'Registering callback {} to be invoked with arguments {} after {} second(s)'.format(
+            'Registering callback {} to be invoked with arguments {} after {} second(s)'
+            .format(
                 callback, args, delay
             ))
 
@@ -380,6 +498,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
         return self.__debug_enabled
 
     def set_debug(self, enabled):
+        super(QEventLoop, self).set_debug(enabled)
         self.__debug_enabled = enabled
 
     def __enter__(self):
@@ -393,27 +512,38 @@ class QEventLoop(QtCore.QObject, _baseclass):
         finally:
             asyncio.set_event_loop(None)
 
+    def __on_events(self, events):
+        for f, callback, transferred, key, ov in events:
+            try:
+                self._logger.debug('Invoking event callback {}'.format(callback))
+                value = callback(transferred, key, ov)
+            except OSError as e:
+                self._logger.warn('Event callback failed: {}'.format(e))
+                f.set_exception(e)
+            else:
+                f.set_result(value)
+
     def __handler_helper(self, target, *args):
-        lock = threading.Lock()
-        lock.acquire()
+        semaphore = threading.Semaphore(0)
         handler = None
 
         def helper_target():
             nonlocal handler
             handler = target(*args)
-            lock.release()
+            semaphore.release()
 
         self.__io_event_loop.call_soon_threadsafe(helper_target)
-        lock.acquire()
-        return handler
+        with semaphore:
+            return handler
 
     def __start_io_event_loop(self):
         """Start the I/O event loop which we defer to for performing I/O on another thread.
         """
-        self.__event_loop_started = threading.Lock()
-        self.__event_loop_started.acquire()
-        threading.Thread(None, self.__io_event_loop_thread).start()
-        self.__event_loop_started.acquire()
+        self._logger.debug('Starting IO event loop...')
+        self.__event_loop_started = threading.Semaphore(0)
+        threading.Thread(target=self.__io_event_loop_thread).start()
+        with self.__event_loop_started:
+            self._logger.debug('IO event loop started')
 
     def __io_event_loop_thread(self):
         """Worker thread for running the I/O event loop."""

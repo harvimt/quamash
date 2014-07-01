@@ -2,6 +2,7 @@ import asyncio
 import os.path
 import logging
 import sys
+import locale
 try:
     from PyQt5.QtWidgets import QApplication
 except ImportError:
@@ -14,6 +15,20 @@ import quamash
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+
+
+class _SubprocessProtocol(asyncio.SubprocessProtocol):
+    def __init__(self, *args, **kwds):
+        super(_SubprocessProtocol, self).__init__(*args, **kwds)
+        self.received_stdout = None
+
+    def pipe_data_received(self, fd, data):
+        text = data.decode(locale.getpreferredencoding(False))
+        if fd == 1:
+            self.received_stdout = text.strip()
+
+    def process_exited(self):
+        asyncio.get_event_loop().stop()
 
 
 @pytest.fixture
@@ -47,6 +62,13 @@ class TestQEventLoop:
         loop.run_until_complete(blocking_task())
 
         assert was_invoked
+
+    def test_can_execute_subprocess(self, loop):
+        transport, protocol = loop.run_until_complete(loop.subprocess_exec(
+            _SubprocessProtocol, 'python', '-c', 'print(\'Hello async world!\')'))
+        loop.run_forever()
+        assert transport.get_returncode() == 0
+        assert protocol.received_stdout == 'Hello async world!'
 
     def test_can_function_as_context_manager(self):
         app = QApplication([])
