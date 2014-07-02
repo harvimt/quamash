@@ -44,8 +44,8 @@ class _IocpProactor(windows_events.IocpProactor):
 				raise ValueError("timeout too big")
 
 		while True:
-			self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
-				ms, threading.get_ident()))
+			# self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
+			# 	ms, threading.get_ident()))
 			status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
 
 			if status is None:
