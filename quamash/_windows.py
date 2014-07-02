@@ -1,14 +1,20 @@
+import threading
 import _winapi
 import asyncio
 from asyncio import windows_events
+from asyncio import _overlapped
+import math
+
+from ._common import with_logger
 
 baseclass = asyncio.ProactorEventLoop
 
+
 @with_logger
-class IocpProactor(windows_events.IocpProactor):
+class _IocpProactor(windows_events.IocpProactor):
 	def __init__(self):
 		self.__events = []
-		super(IocpProactor, self).__init__()
+		super(_IocpProactor, self).__init__()
 
 	def select(self, timeout=None):
 		"""Override in order to handle events in a threadsafe manner."""
@@ -20,12 +26,10 @@ class IocpProactor(windows_events.IocpProactor):
 
 	def close(self):
 		self._logger.debug('Closing')
-		super(IocpProactor, self).close()
+		super(_IocpProactor, self).close()
 
 	def _poll(self, timeout=None):
 		"""Override in order to handle events in a threadsafe manner."""
-		import math
-		from asyncio import _overlapped
 		INFINITE = 0xffffffff
 
 		if timeout is None:
@@ -63,3 +67,5 @@ class IocpProactor(windows_events.IocpProactor):
 				self.__events.append((f, callback, transferred, key, ov))
 
 			ms = 0
+
+selector_cls = _IocpProactor

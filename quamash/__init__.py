@@ -15,7 +15,6 @@ import os
 import asyncio
 import time
 from functools import wraps
-import logging
 from queue import Queue
 from concurrent.futures import Future
 import threading
@@ -27,8 +26,6 @@ except ImportError:
 	QtCore.Signal = QtCore.pyqtSignal
 
 from ._common import with_logger
-
-_logger = logging.getLogger(__name__)
 
 
 @with_logger
