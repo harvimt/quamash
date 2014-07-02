@@ -58,7 +58,6 @@ class _EventPoller(QtCore.QObject):
 			events = self.__selector.select(0.01)
 			if events:
 				self._logger.debug('Got events {}'.format(events))
-			if events:
 				self.sig_events.emit(events)
 
 		self.__semaphore.release()
