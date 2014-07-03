@@ -64,13 +64,27 @@ class TestQEventLoop:
 		assert was_invoked
 
 	def test_can_execute_subprocess(self, loop):
+		"""Verify that a subprocess can be executed."""
 		transport, protocol = loop.run_until_complete(loop.subprocess_exec(
 			_SubprocessProtocol, 'python', '-c', 'print(\'Hello async world!\')'))
 		loop.run_forever()
 		assert transport.get_returncode() == 0
 		assert protocol.received_stdout == 'Hello async world!'
 
+	def test_can_terminate_subprocess(self, loop):
+		"""Verify that a subprocess can be terminated."""
+		# Start a never-ending process
+		transport = loop.run_until_complete(loop.subprocess_exec(
+				_SubprocessProtocol, 'python', '-c', 'import time\nwhile True: time.sleep(1)'))[0]
+		# Terminate!
+		transport.kill()
+		# Wait for process to die
+		loop.run_forever()
+
+		assert transport.get_returncode() != 0
+
 	def test_can_function_as_context_manager(self):
+		"""Verify that a QEventLoop can function as its own context manager."""
 		app = QApplication([])
 
 		with quamash.QEventLoop(app) as loop:
