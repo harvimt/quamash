@@ -31,7 +31,6 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 		asyncio.get_event_loop().stop()
 
 
-
 @pytest.fixture(scope='session')
 def application():
 	app = QApplication([])
