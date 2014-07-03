@@ -31,10 +31,16 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 		asyncio.get_event_loop().stop()
 
 
-@pytest.fixture
-def loop(request):
+
+@pytest.fixture(scope='session')
+def application():
 	app = QApplication([])
-	lp = quamash.QEventLoop(app)
+	return app
+
+
+@pytest.fixture
+def loop(request, application):
+	lp = quamash.QEventLoop(application)
 	asyncio.set_event_loop(lp)
 
 	def fin():
@@ -70,10 +76,8 @@ class TestQEventLoop:
 		assert transport.get_returncode() == 0
 		assert protocol.received_stdout == 'Hello async world!'
 
-	def test_can_function_as_context_manager(self):
-		app = QApplication([])
-
-		with quamash.QEventLoop(app) as loop:
+	def test_can_function_as_context_manager(self, application):
+		with quamash.QEventLoop(application) as loop:
 			assert isinstance(loop, quamash.QEventLoop)
 			loop.call_soon(loop.stop)
 			loop.run_forever()
