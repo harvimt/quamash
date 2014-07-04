@@ -206,12 +206,30 @@ class QEventLoop(QtCore.QObject, _baseclass):
 		self.__debug_enabled = False
 		self.__default_executor = None
 		self.__exception_handler = None
+		self.__signal_safe_callbacks = []
 
-		super(QEventLoop, self).__init__()
-		_baseclass.__init__(self, _selector_cls())
+		print('Initing Qt')
+		QtCore.QObject.__init__(self)
+		print('Inited')
+		# _baseclass.__init__(self, _selector_cls())
 
 		self.__event_poller = _EventPoller(self._selector)
 		self.__event_poller.sig_events.connect(self.__on_events)
+
+		socket_notifier = QtCore.QSocketNotifier(self._ssock.fileno(), QtCore.QSocketNotifier.Read, self)
+		socket_notifier.activated.connect(self.__wake_on_socket)
+
+	def __wake_on_socket(self):
+		self._logger.info('Waking on socket notification')
+		for i, handle in enumerate(self.__signal_safe_callbacks[:]):
+			self.__add_callback(0, handle)
+			del self.__signal_safe_callbacks[i]
+
+	def _add_callback_signalsafe(self, handle):
+		"""Add callback in signal safe manner."""
+		self._logger.info('Adding callback signal safe: {}'.format(handle))
+		self.__signal_safe_callbacks.append(handle)
+		self._write_to_self()
 
 	def run_forever(self):
 		"""Run eventloop forever."""
@@ -220,7 +238,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 			self._logger.debug('IO event loop stopped')
 			semaphore.release()
 
-		self.__start_io_event_loop()
+		# self.__start_io_event_loop()
 
 		semaphore = threading.Semaphore(0)
 		self.__is_running = True
@@ -235,7 +253,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 			self._logger.debug('Stopping event poller')
 			self.__event_poller.stop()
 			self._logger.debug('Stopping IO event loop...')
-			self.__io_event_loop.call_soon_threadsafe(stop_io_event_loop)
+			# self.__io_event_loop.call_soon_threadsafe(stop_io_event_loop)
 			with semaphore:
 				self.__is_running = False
 
@@ -289,12 +307,14 @@ class QEventLoop(QtCore.QObject, _baseclass):
 			.format(
 				callback, args, delay
 			))
+		self.__add_callback(delay, asyncio.Handle(callback, args, self))
 
+	def __add_callback(self, delay, handle):
 		def upon_timeout():
 			self.__timers.remove(timer)
-			self._logger.debug('Callback timer fired, calling {} with args {}'.format(
-				callback, args))
-			callback(*args)
+			self._logger.debug('Callback timer fired, calling {}'.format(
+				handle))
+			handle._run()
 
 		timer = QtCore.QTimer(self.__app)
 		timer.timeout.connect(upon_timeout)
@@ -349,14 +369,6 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
 	def set_default_executor(self, executor):
 		self.__default_executor = executor
-
-	# Signal handling.
-
-	def add_signal_handler(self, sig, callback, *args):
-		return self.__handler_helper(self.add_signal_handler, sig, callback, *args)
-
-	def remove_signal_handler(self, sig):
-		return self.__handler_helper(self.remove_signal_handler, sig)
 
 	# Error handlers.
 
@@ -461,7 +473,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 			handler = target(*args)
 			semaphore.release()
 
-		self.__io_event_loop.call_soon_threadsafe(helper_target)
+		# self.__io_event_loop.call_soon_threadsafe(helper_target)
 		with semaphore:
 			return handler
 
