@@ -5,7 +5,25 @@ from asyncio import windows_events
 from asyncio import _overlapped
 import math
 
-from ._common import with_logger
+from ._common import with_logger, QtCore
+
+
+class ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
+	def __init__(self):
+		QtCore.QObject.__init__(self)
+		asyncio.ProactorEventLoop.__init__(self, _IocpProactor())
+
+	def _process_events(self, events):
+		for f, callback, transferred, key, ov in events:
+			try:
+				self._logger.debug('Invoking event callback {}'.format(callback))
+				value = callback(transferred, key, ov)
+			except OSError as e:
+				self._logger.warn('Event callback failed: {}'.format(e))
+				f.set_exception(e)
+			else:
+				f.set_result(value)
+
 
 baseclass = asyncio.ProactorEventLoop
 
@@ -67,5 +85,3 @@ class _IocpProactor(windows_events.IocpProactor):
 				self.__events.append((f, callback, transferred, key, ov))
 
 			ms = 0
-
-selector_cls = _IocpProactor

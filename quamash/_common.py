@@ -1,4 +1,9 @@
 import logging
+try:
+	from PySide import QtCore
+except ImportError:
+	from PyQt5 import QtCore
+	QtCore.Signal = QtCore.pyqtSignal
 
 
 def with_logger(cls):
