@@ -29,53 +29,6 @@ from ._common import with_logger
 
 
 @with_logger
-class _EventWorker(QtCore.QThread):
-	def __init__(self, selector, parent):
-		super().__init__()
-
-		self.__stop = False
-		self.__selector = selector
-		self.__sig_events = parent.sig_events
-		self.__semaphore = QtCore.QSemaphore()
-
-	def start(self):
-		super().start()
-		self.__semaphore.acquire()
-
-	def stop(self):
-		self.__stop = True
-		# Wait for thread to end
-		self.wait()
-
-	def run(self):
-		self._logger.debug('Thread started')
-		self.__semaphore.release()
-
-		while not self.__stop:
-			events = self.__selector.select(0.1)
-			if events:
-				self._logger.debug('Got events from poll: {}'.format(events))
-				self.__sig_events.emit(events)
-
-		self._logger.debug('Exiting thread')
-
-
-@with_logger
-class _EventPoller(QtCore.QObject):
-	"""Polling of events in separate thread."""
-	sig_events = QtCore.Signal(list)
-
-	def start(self, selector):
-		self._logger.debug('Starting (selector: {})...'.format(selector))
-		self.__worker = _EventWorker(selector, self)
-		self.__worker.start()
-
-	def stop(self):
-		self._logger.debug('Stopping worker thread...')
-		self.__worker.stop()
-
-
-@with_logger
 class _QThreadWorker(QtCore.QThread):
 	"""
 	Read from the queue.
@@ -226,24 +179,19 @@ class QEventLoop(_baseclass):
 		self.__default_executor = None
 		self.__exception_handler = None
 
-		_baseclass.__init__(self)
-
-		# self.__event_poller = _EventPoller()
-		# self.__event_poller.sig_events.connect(self._process_events)
+		super().__init__()
 
 	def run_forever(self):
 		"""Run eventloop forever."""
 		self.__is_running = True
-		# self._logger.debug('Starting event poller')
-		# self.__event_poller.start(self._selector)
+		self._before_run_forever()
 		try:
 			self._logger.debug('Starting Qt event loop')
 			rslt = self.__app.exec_()
 			self._logger.debug('Qt event loop ended with result {}'.format(rslt))
 			return rslt
 		finally:
-			# self._logger.debug('Stopping event poller')
-			# self.__event_poller.stop()
+			self._after_run_forever()
 			self.__is_running = False
 
 	def run_until_complete(self, future):

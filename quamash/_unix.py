@@ -93,8 +93,7 @@ class _Selector(selectors.BaseSelector):
 		key = selectors.SelectorKey(fileobj, self._fileobj_lookup(fileobj), events, data)
 
 		if key.fd in self._fd_to_key:
-			raise KeyError("{!r} (FD {}) is already registered"
-						   .format(fileobj, key.fd))
+			raise KeyError("{!r} (FD {}) is already registered".format(fileobj, key.fd))
 
 		self._fd_to_key[key.fd] = key
 
@@ -130,7 +129,7 @@ class _Selector(selectors.BaseSelector):
 		try:
 			del self.__read_notifiers[key.fd]
 		except KeyError:
-			 pass
+			pass
 		try:
 			del self.__write_notifiers[key.fd]
 		except KeyError:
@@ -186,6 +185,12 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 		socket_notifier = self.__socket_notifier = QtCore.QSocketNotifier(
 			self._ssock.fileno(), QtCore.QSocketNotifier.Read)
 		socket_notifier.activated.connect(self.__wake_on_socket)
+
+	def _before_run_forever(self):
+		pass
+
+	def _after_run_forever(self):
+		pass
 
 	def _process_event(self, key, mask):
 		"""Selector has delivered us an event."""

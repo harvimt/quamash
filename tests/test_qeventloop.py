@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import quamash
 
 
-logging.basicConfig(level=logging.DEBUG,
-					format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+logging.basicConfig(
+	level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 
 
 class _SubprocessProtocol(asyncio.SubprocessProtocol):
