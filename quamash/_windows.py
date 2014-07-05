@@ -120,7 +120,7 @@ class _EventWorker(QtCore.QThread):
 		self.__semaphore.release()
 
 		while not self.__stop:
-			events = self.__selector.select(0.1)
+			events = self.__selector.select(0.01)
 			if events:
 				self._logger.debug('Got events from poll: {}'.format(events))
 				self.__sig_events.emit(events)
