@@ -230,7 +230,7 @@ class QEventLoop(_baseclass):
 		self.__app = None
 		if self.__default_executor is not None:
 			self.__default_executor.close()
-		super(QEventLoop, self).close()
+		super().close()
 
 	def call_later(self, delay, callback, *args):
 		"""Register callback to be invoked after a certain delay."""
@@ -241,16 +241,13 @@ class QEventLoop(_baseclass):
 
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
-			.format(
-				callback, args, delay
-			))
+			.format(callback, args, delay))
 		self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def _add_callback(self, handle, delay=0):
 		def upon_timeout():
 			self.__timers.remove(timer)
-			self._logger.debug('Callback timer fired, calling {}'.format(
-				handle))
+			self._logger.debug('Callback timer fired, calling {}'.format(handle))
 			handle._run()
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
@@ -390,25 +387,6 @@ class QEventLoop(_baseclass):
 			self.close()
 		finally:
 			asyncio.set_event_loop(None)
-
-	def __start_io_event_loop(self):
-		"""Start the I/O event loop which we defer to for performing I/O on another thread.
-		"""
-		self._logger.debug('Starting IO event loop...')
-		self.__event_loop_started = threading.Semaphore(0)
-		threading.Thread(target=self.__io_event_loop_thread).start()
-		with self.__event_loop_started:
-			self._logger.debug('IO event loop started')
-
-	def __io_event_loop_thread(self):
-		"""Worker thread for running the I/O event loop."""
-		io_event_loop = asyncio.get_event_loop_policy().new_event_loop()
-		assert isinstance(io_event_loop, asyncio.AbstractEventLoop)
-		io_event_loop.set_debug(self.__debug_enabled)
-		asyncio.set_event_loop(io_event_loop)
-		self.__io_event_loop = io_event_loop
-		self.__io_event_loop.call_soon(self.__event_loop_started.release)
-		self.__io_event_loop.run_forever()
 
 	@staticmethod
 	def __log_error(*args, **kwds):
