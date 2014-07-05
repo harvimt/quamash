@@ -52,7 +52,7 @@ Usage
 
 Testing
 =======
-Quamash is tested with [pytest](http://pytest.org); in order to run the test suite, just execute py.test on the
+Quamash is tested with `pytest`_; in order to run the test suite, just execute py.test on the
 commandline. The tests themselves are beneath the 'tests' directory.
 
 Name
@@ -61,3 +61,4 @@ Tulip related projects are being named after other flowers, Quamash is one of th
 starts with a "Q".
 
 .. _`PEP 3156`: http://legacy.python.org/dev/peps/pep-3156/
+ _`pytest`: http://pytest.org
