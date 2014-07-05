@@ -121,19 +121,21 @@ class _Selector(selectors.BaseSelector):
 			self.__parent._process_event(key, EVENT_WRITE & key.events)
 
 	def unregister(self, fileobj):
+		def drop_notifier(notifiers):
+			try:
+				notifier = notifiers.pop(key.fd)
+			except KeyError:
+				pass
+			else:
+				notifier.activated.disconnect()
+
 		try:
 			key = self._fd_to_key.pop(self._fileobj_lookup(fileobj))
 		except KeyError:
 			raise KeyError("{!r} is not registered".format(fileobj)) from None
 
-		try:
-			del self.__read_notifiers[key.fd]
-		except KeyError:
-			pass
-		try:
-			del self.__write_notifiers[key.fd]
-		except KeyError:
-			pass
+		drop_notifier(self.__read_notifiers)
+		drop_notifier(self.__write_notifiers)
 
 		return key
 
