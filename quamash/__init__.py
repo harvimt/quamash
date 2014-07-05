@@ -29,38 +29,53 @@ from ._common import with_logger
 
 
 @with_logger
+class _EventWorker(QtCore.QThread):
+	def __init__(self, selector, parent):
+		super().__init__()
+
+		self.__stop = False
+		self.__selector = selector
+		self.__sig_events = parent.sig_events
+		self.semaphore = QtCore.QSemaphore()
+
+	def stop(self):
+		self.__stop = True
+		# Wait for thread to end
+		self.semaphore.acquire()
+
+	def run(self):
+		self._logger.debug('Thread started')
+		self.semaphore.release()
+
+		while not self.__stop:
+			events = self.__selector.select(0.01)
+			if events:
+				self._logger.debug('Got events {}'.format(events))
+				self.__sig_events.emit(list(events))
+
+		self.semaphore.release()
+		self._logger.debug('Exiting thread')
+
+
+@with_logger
 class _EventPoller(QtCore.QObject):
 	"""Polling of events in separate thread."""
 	sig_events = QtCore.Signal(list)
 
 	def __init__(self, selector):
 		super(_EventPoller, self).__init__()
-		self.__semaphore = threading.Semaphore(0)
 		self.__selector = selector
 
 	def start(self):
-		self.__canceled = False
-		self._logger.debug('Starting')
-		threading.Thread(target=self.__run).start()
+		self._logger.debug('Starting...')
+		self.__worker = _EventWorker(self.__selector, self)
+		self.__worker.start()
 		# Wait for thread to start
-		self.__semaphore.acquire()
+		self.__worker.semaphore.acquire()
 
 	def stop(self):
-		self._logger.debug('Stopping')
-		self.__canceled = True
-		# Wait for thread to end
-		self.__semaphore.acquire()
-
-	def __run(self):
-		self.__semaphore.release()
-
-		while not self.__canceled:
-			events = self.__selector.select(0.01)
-			if events:
-				self._logger.debug('Got events {}'.format(events))
-				self.sig_events.emit(events)
-
-		self.__semaphore.release()
+		self._logger.debug('Stopping worker thread...')
+		self.__worker.stop()
 
 
 @with_logger
@@ -211,7 +226,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 		print('Initing Qt')
 		QtCore.QObject.__init__(self)
 		print('Inited')
-		# _baseclass.__init__(self, _selector_cls())
+		_baseclass.__init__(self, _selector_cls())
 
 		self.__event_poller = _EventPoller(self._selector)
 		self.__event_poller.sig_events.connect(self.__on_events)
@@ -240,7 +255,6 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
 		# self.__start_io_event_loop()
 
-		semaphore = threading.Semaphore(0)
 		self.__is_running = True
 		self._logger.debug('Starting Qt event loop')
 		try:
@@ -252,10 +266,9 @@ class QEventLoop(QtCore.QObject, _baseclass):
 		finally:
 			self._logger.debug('Stopping event poller')
 			self.__event_poller.stop()
-			self._logger.debug('Stopping IO event loop...')
+			# self._logger.debug('Stopping IO event loop...')
 			# self.__io_event_loop.call_soon_threadsafe(stop_io_event_loop)
-			with semaphore:
-				self.__is_running = False
+			self.__is_running = False
 
 	def run_until_complete(self, future):
 		"""Run until Future is complete."""
@@ -276,7 +289,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 	def stop(self):
 		"""Stop event loop."""
 		if not self.__is_running:
-			self._logger.debug('Not running')
+			self._logger.debug('Already stopped')
 			return
 
 		self._logger.debug('Stopping eventloop...')
