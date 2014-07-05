@@ -52,7 +52,7 @@ Usage
 
 Testing
 =======
-Quamash is tested with pytest; in order to run the test suite, just execute py.test on the
+Quamash is tested with [pytest](http://pytest.org); in order to run the test suite, just execute py.test on the
 commandline. The tests themselves are beneath the 'tests' directory.
 
 Name
