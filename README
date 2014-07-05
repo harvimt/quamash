@@ -5,6 +5,8 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>
 
+.. image:: https://travis-ci.org/aknuds1/quamash.png?branch=master :target: https://travis-ci.org/aknuds1/quamash
+
 Requirements
 ============
 Quamash requires Python 3.4 and either PyQt 5 or PySide.
