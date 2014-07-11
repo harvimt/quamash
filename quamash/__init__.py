@@ -265,7 +265,7 @@ class QEventLoop(_baseclass):
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
-		self._add_callback(asyncio.Handle(callback, args, self), delay)
+		return self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def _add_callback(self, handle, delay=0):
 		def upon_timeout():
@@ -283,11 +283,11 @@ class QEventLoop(_baseclass):
 		return _Cancellable(timer, self)
 
 	def call_soon(self, callback, *args):
-		self.call_later(0, callback, *args)
+		return self.call_later(0, callback, *args)
 
 	def call_at(self, when, callback, *args):
 		"""Register callback to be invoked at a certain time."""
-		self.call_later(when - self.time(), callback, *args)
+		return self.call_later(when - self.time(), callback, *args)
 
 	def time(self):
 		"""Get time according to event loop's clock."""
