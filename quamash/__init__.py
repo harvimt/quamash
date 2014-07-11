@@ -72,11 +72,12 @@ class QThreadExecutor(QtCore.QObject):
 	"""
 	ThreadExecutor that produces QThreads
 	Same API as `concurrent.futures.Executor`
-
+	
+	>>> from quamash import QThreadExecutor
 	>>> with QThreadExecutor(5) as executor:
-	>>>     f = executor.submit(lambda x: 2 + x, x)
-	>>>     r = f.result()
-	>>>     assert r == 4
+	...     f = executor.submit(lambda x: 2 + x, 2)
+	...     r = f.result()
+	...     assert r == 4
 	"""
 	def __init__(self, max_workers=10, parent=None):
 		super().__init__(parent)
@@ -121,21 +122,38 @@ def _easycallback(fn):
 
 	Remember: only objects that inherit from QObject can support signals/slots
 
+	>>> try: from PyQt5.QtCore import QThread, QObject
+	... except ImportError: from PySide.QtCore import QThread, QObject
+	>>>
+	>>> try: from PyQt5.QtWidgets import QApplication
+	... except ImportError: from PySide.QtGui import QApplication
+	>>>
+	>>> app = QApplication([])
+	>>>
+	>>> from quamash import QEventLoop, _easycallback
+	>>> import asyncio
+	>>>
+	>>> global_thread = QThread.currentThread()
 	>>> class MyObject(QObject):
-	>>>     @_easycallback
-	>>>     def mycallback(self):
-	>>>         dostuff()
+	...     @_easycallback
+	...     def mycallback(self):
+	...         global global_thread, mythread
+	...         cur_thread = QThread.currentThread()
+	...         assert cur_thread is not global_thread
+	...         assert cur_thread is mythread
 	>>>
+	>>> mythread = QThread()
+	>>> mythread.start()
 	>>> myobject = MyObject()
+	>>> myobject.moveToThread(mythread)
 	>>>
-	>>> @task
-	>>> def mytask():
-	>>>     myobject.mycallback()
+	>>> @asyncio.coroutine
+	... def mycoroutine():
+	...     myobject.mycallback()
 	>>>
-	>>> loop = QEventLoop()
+	>>> loop = QEventLoop(app)
 	>>> with loop:
-	>>>     loop.call_soon(mytask)
-	>>>     loop.run_forever()
+	...     loop.run_until_complete(mycoroutine())
 	"""
 	@wraps(fn)
 	def in_wrapper(self, *args, **kwargs):
@@ -161,15 +179,20 @@ else:
 class QEventLoop(_baseclass):
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop
-	>>> @quamash.task
-	>>> def my_task(x):
-	>>>     return x + 2
+	>>> import quamash, asyncio
+	>>> try: from PyQt5.QtWidgets import QApplication
+	... except ImportError: from PySide.QtCore import QApplication
 	>>>
-	>>> app = QApplication()
+	>>> app = QApplication([])
+	>>>
+	>>> @asyncio.coroutine
+	... def xplusy(x, y):
+	...     yield from asyncio.sleep(2)
+	...     assert x + y == 4
+	...     yield from asyncio.sleep(2)
+	>>> 
 	>>> with QEventLoop(app) as loop:
-	>>>     y = loop.call_soon(my_task)
-	>>>
-	>>>     assert y == 4
+	...     loop.run_until_complete(xplusy(2,2))
 	"""
 	def __init__(self, app):
 		self.__timers = []
@@ -396,6 +419,8 @@ class QEventLoop(_baseclass):
 		except:
 			sys.stderr.write('{}, {}\n'.format(args, kwds))
 
+	def remove(self, timer):
+		self.__timers.remove(timer)
 
 class _Cancellable:
 	def __init__(self, timer, loop):
@@ -403,5 +428,4 @@ class _Cancellable:
 		self.__loop = loop
 
 	def cancel(self):
-		self.__loop.remove(timer)
 		self.__timer.stop()
