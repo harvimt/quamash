@@ -5,8 +5,8 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>
 
-.. image:: https://travis-ci.org/aknuds1/quamash.png?branch=master
-    :target: https://travis-ci.org/aknuds1/quamash
+.. image:: https://travis-ci.org/harvimt/quamash.png?branch=master
+    :target: https://travis-ci.org/harvimt/quamash
 
 Requirements
 ============
@@ -16,42 +16,40 @@ Usage
 =====
 
 .. code:: python
-
-	import quamash
-	import time
-	import asyncio
 	import sys
+	import asyncio
+	import time
 
-	try:
-		from PyQt5.QtWidgets import QApplication, QMainWindow
-	except ImportError:
-		from PySide.QtGui import QApplication, QMainWindow
+	from PyQt5.QtWidgets import QApplication, QProgressBar
+	from quamash import QEventLoop, QThreadExecutor
 
+	app = QApplication(sys.argv)
+	progress = QProgressBar()
+	loop = QEventLoop(app)
 
-	def identity(x):
-		time.sleep(10)
-		return x
-
+	progress.setRange(0, 99)
+	progress.show()
 
 	@asyncio.coroutine
-	def my_task():
-		for x in range(5):
-			# Execute function in thread since it blocks
-			y = yield from loop.run_in_executor(None, identity, x)
-			assert x == y
+	def master():
+		yield from first_50()
+		with QThreadExecutor(1) as exec:
+			yield from loop.run_in_executor(exec, last_50)
+		# TODO announce complettion?
 
-		loop.stop()
+	@asyncio.coroutine
+	def first_50():
+		for i in range(50):
+			progress.setValue(i)
+			yield from asyncio.sleep(.1)
 
+	def last_50():
+		for i in range(50,100):
+			loop.call_soon_threadsafe(progress.setValue, i)
+			time.sleep(.1)
 
-	if __name__ == '__main__':
-		app = QApplication(sys.argv)
-
-		win = QMainWindow()
-		win.show()
-
-		loop = quamash.QEventLoop(app)
-		with loop:
-			loop.run_until_complete(my_task())
+	with loop:
+		loop.run_until_complete(master())
 
 Testing
 =======
