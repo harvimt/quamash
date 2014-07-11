@@ -187,9 +187,9 @@ class QEventLoop(_baseclass):
 	>>>
 	>>> @asyncio.coroutine
 	... def xplusy(x, y):
-	...     yield from asyncio.sleep(2)
+	...     yield from asyncio.sleep(.1)
 	...     assert x + y == 4
-	...     yield from asyncio.sleep(2)
+	...     yield from asyncio.sleep(.1)
 	>>> 
 	>>> with QEventLoop(app) as loop:
 	...     loop.run_until_complete(xplusy(2,2))
