@@ -29,41 +29,6 @@ from ._common import with_logger
 
 
 @with_logger
-class _EventPoller(QtCore.QObject):
-	"""Polling of events in separate thread."""
-	sig_events = QtCore.Signal(list)
-
-	def __init__(self, selector):
-		super(_EventPoller, self).__init__()
-		self.__semaphore = threading.Semaphore(0)
-		self.__selector = selector
-
-	def start(self):
-		self.__canceled = False
-		self._logger.debug('Starting')
-		threading.Thread(target=self.__run).start()
-		# Wait for thread to start
-		self.__semaphore.acquire()
-
-	def stop(self):
-		self._logger.debug('Stopping')
-		self.__canceled = True
-		# Wait for thread to end
-		self.__semaphore.acquire()
-
-	def __run(self):
-		self.__semaphore.release()
-
-		while not self.__canceled:
-			events = self.__selector.select(0.01)
-			if events:
-				self._logger.debug('Got events {}'.format(events))
-				self.sig_events.emit(events)
-
-		self.__semaphore.release()
-
-
-@with_logger
 class _QThreadWorker(QtCore.QThread):
 	"""
 	Read from the queue.
@@ -77,8 +42,14 @@ class _QThreadWorker(QtCore.QThread):
 		super().__init__()
 
 	def run(self):
-		while not self.__stop:
-			future, callback, args, kwargs = self.__queue.get()
+		queue = self.__queue
+		while True:
+			command = queue.get()
+			if command is None:
+				# Stopping...
+				break
+
+			future, callback, args, kwargs = command
 			self._logger.debug('#{} got callback {} with args {} and kwargs {} from queue'
 				.format(self.__num, callback, args, kwargs))
 			if future.set_running_or_notify_cancel():
@@ -89,11 +60,11 @@ class _QThreadWorker(QtCore.QThread):
 			else:
 				self._logger.debug('Future was cancelled')
 
-		self._logger.debug('#{} stopped'.format(self.__num))
+		self._logger.debug('Thread #{} stopped'.format(self.__num))
 
-	def stop(self):
-		self._logger.debug('#{} stopping...'.format(self.__num))
-		self.__stop = True
+	def wait(self):
+		self._logger.debug('Waiting for thread #{} to stop...'.format(self.__num))
+		super().wait()
 
 
 @with_logger
@@ -129,8 +100,11 @@ class QThreadExecutor(QtCore.QObject):
 
 	def close(self):
 		self._logger.debug('Closing')
+		for i in range(len(self.__workers)):
+			# Signal workers to stop
+			self.__queue.put(None)
 		for w in self.__workers:
-			w.stop()
+			w.wait()
 
 	def __enter__(self, *args):
 		return self
@@ -196,15 +170,13 @@ def _easycallback(fn):
 if os.name == 'nt':
 	from . import _windows
 	_baseclass = _windows.baseclass
-	_selector_cls = _windows.selector_cls
 else:
 	from . import _unix
 	_baseclass = _unix.baseclass
-	_selector_cls = _unix.selector_cls
 
 
 @with_logger
-class QEventLoop(QtCore.QObject, _baseclass):
+class QEventLoop(_baseclass):
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop
 	>>> import quamash, asyncio
@@ -230,37 +202,20 @@ class QEventLoop(QtCore.QObject, _baseclass):
 		self.__default_executor = None
 		self.__exception_handler = None
 
-		super(QEventLoop, self).__init__()
-		_baseclass.__init__(self, _selector_cls())
-
-		self.__event_poller = _EventPoller(self._selector)
-		self.__event_poller.sig_events.connect(self.__on_events)
+		super().__init__()
 
 	def run_forever(self):
 		"""Run eventloop forever."""
-		def stop_io_event_loop():
-			self.__io_event_loop.stop()
-			self._logger.debug('IO event loop stopped')
-			semaphore.release()
-
-		self.__start_io_event_loop()
-
-		semaphore = threading.Semaphore(0)
 		self.__is_running = True
-		self._logger.debug('Starting Qt event loop')
+		self._before_run_forever()
 		try:
-			self._logger.debug('Starting event poller')
-			self.__event_poller.start()
+			self._logger.debug('Starting Qt event loop')
 			rslt = self.__app.exec_()
 			self._logger.debug('Qt event loop ended with result {}'.format(rslt))
 			return rslt
 		finally:
-			self._logger.debug('Stopping event poller')
-			self.__event_poller.stop()
-			self._logger.debug('Stopping IO event loop...')
-			self.__io_event_loop.call_soon_threadsafe(stop_io_event_loop)
-			with semaphore:
-				self.__is_running = False
+			self._after_run_forever()
+			self.__is_running = False
 
 	def run_until_complete(self, future):
 		"""Run until Future is complete."""
@@ -281,12 +236,12 @@ class QEventLoop(QtCore.QObject, _baseclass):
 	def stop(self):
 		"""Stop event loop."""
 		if not self.__is_running:
-			self._logger.debug('Not running')
+			self._logger.debug('Already stopped')
 			return
 
-		self._logger.debug('Stopping eventloop...')
+		self._logger.debug('Stopping event loop...')
 		self.__app.exit()
-		self._logger.debug('Stopped eventloop')
+		self._logger.debug('Stopped event loop')
 
 	def is_running(self):
 		"""Is event loop running?"""
@@ -298,7 +253,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 		self.__app = None
 		if self.__default_executor is not None:
 			self.__default_executor.close()
-		super(QEventLoop, self).close()
+		super().close()
 
 	def call_later(self, delay, callback, *args):
 		"""Register callback to be invoked after a certain delay."""
@@ -309,16 +264,16 @@ class QEventLoop(QtCore.QObject, _baseclass):
 
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
-			.format(
-				callback, args, delay
-			))
+			.format(callback, args, delay))
+		self._add_callback(asyncio.Handle(callback, args, self), delay)
 
+	def _add_callback(self, handle, delay=0):
 		def upon_timeout():
 			self.__timers.remove(timer)
-			self._logger.debug('Callback timer fired, calling {} with args {}'.format(
-				callback, args))
-			callback(*args)
+			self._logger.debug('Callback timer fired, calling {}'.format(handle))
+			handle._run()
 
+		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
 		timer = QtCore.QTimer(self.__app)
 		timer.timeout.connect(upon_timeout)
 		timer.setSingleShot(True)
@@ -373,14 +328,6 @@ class QEventLoop(QtCore.QObject, _baseclass):
 	def set_default_executor(self, executor):
 		self.__default_executor = executor
 
-	# Signal handling.
-
-	def add_signal_handler(self, sig, callback, *args):
-		return self.__handler_helper(self.add_signal_handler, sig, callback, *args)
-
-	def remove_signal_handler(self, sig):
-		return self.__handler_helper(self.remove_signal_handler, sig)
-
 	# Error handlers.
 
 	def set_exception_handler(self, handler):
@@ -396,7 +343,7 @@ class QEventLoop(QtCore.QObject, _baseclass):
 		context parameter has the same meaning as in
 		`call_exception_handler()`.
 		"""
-		self._logger.debug('Executing default exception handler')
+		self._logger.debug('Default exception handler executing')
 		message = context.get('message')
 		if not message:
 			message = 'Unhandled exception in event loop'
@@ -463,49 +410,6 @@ class QEventLoop(QtCore.QObject, _baseclass):
 			self.close()
 		finally:
 			asyncio.set_event_loop(None)
-
-	def __on_events(self, events):
-		for f, callback, transferred, key, ov in events:
-			try:
-				self._logger.debug('Invoking event callback {}'.format(callback))
-				value = callback(transferred, key, ov)
-			except OSError as e:
-				self._logger.warn('Event callback failed: {}'.format(e))
-				f.set_exception(e)
-			else:
-				f.set_result(value)
-
-	def __handler_helper(self, target, *args):
-		semaphore = threading.Semaphore(0)
-		handler = None
-
-		def helper_target():
-			nonlocal handler
-			handler = target(*args)
-			semaphore.release()
-
-		self.__io_event_loop.call_soon_threadsafe(helper_target)
-		with semaphore:
-			return handler
-
-	def __start_io_event_loop(self):
-		"""Start the I/O event loop which we defer to for performing I/O on another thread.
-		"""
-		self._logger.debug('Starting IO event loop...')
-		self.__event_loop_started = threading.Semaphore(0)
-		threading.Thread(target=self.__io_event_loop_thread).start()
-		with self.__event_loop_started:
-			self._logger.debug('IO event loop started')
-
-	def __io_event_loop_thread(self):
-		"""Worker thread for running the I/O event loop."""
-		io_event_loop = asyncio.get_event_loop_policy().new_event_loop()
-		assert isinstance(io_event_loop, asyncio.AbstractEventLoop)
-		io_event_loop.set_debug(self.__debug_enabled)
-		asyncio.set_event_loop(io_event_loop)
-		self.__io_event_loop = io_event_loop
-		self.__io_event_loop.call_soon(self.__event_loop_started.release)
-		self.__io_event_loop.run_forever()
 
 	@staticmethod
 	def __log_error(*args, **kwds):
