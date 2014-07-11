@@ -36,7 +36,7 @@ Usage
         yield from first_50()
         with QThreadExecutor(1) as exec:
             yield from loop.run_in_executor(exec, last_50)
-        # TODO announce complettion?
+        # TODO announce completion?
 
     @asyncio.coroutine
     def first_50():
