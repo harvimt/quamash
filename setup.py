@@ -2,7 +2,6 @@ from setuptools import setup
 import quamash
 import re
 
-
 groups = re.findall(r'(.+?) <(.+?)>(?:,\s*)?', quamash.__author__)
 authors = [x[0].strip() for x in groups]
 emails = [x[1].strip() for x in groups]
