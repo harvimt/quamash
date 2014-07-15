@@ -73,14 +73,21 @@ def test_can_run_tasks_in_executor(loop, executor):
 		nonlocal was_invoked
 		was_invoked = True
 
-	@asyncio.coroutine
-	def blocking_task():
-		yield from loop.run_in_executor(None, blocking_func)
-
 	was_invoked = False
-	loop.run_until_complete(blocking_task())
+	loop.run_until_complete(loop.run_in_executor(None, blocking_func))
 
 	assert was_invoked
+
+
+def test_can_handle_exception_in_default_executor(loop):
+	"""Verify that exceptions from tasks run in default (threaded) executor are handled."""
+	def blocking_func():
+		raise Exception('Testing')
+
+	with pytest.raises(Exception) as excinfo:
+		loop.run_until_complete(loop.run_in_executor(None, blocking_func))
+
+	assert str(excinfo.value) == 'Testing'
 
 
 def test_can_execute_subprocess(loop):

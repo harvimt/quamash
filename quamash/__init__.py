@@ -56,9 +56,14 @@ class _QThreadWorker(QtCore.QThread):
 			)
 			if future.set_running_or_notify_cancel():
 				self._logger.debug('Invoking callback')
-				r = callback(*args, **kwargs)
-				self._logger.debug('Setting Future result: {}'.format(r))
-				future.set_result(r)
+				try:
+					r = callback(*args, **kwargs)
+				except Exception as err:
+					self._logger.debug('Setting Future exception: {}'.format(err))
+					future.set_exception(err)
+				else:
+					self._logger.debug('Setting Future result: {}'.format(r))
+					future.set_result(r)
 			else:
 				self._logger.debug('Future was cancelled')
 
