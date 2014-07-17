@@ -123,9 +123,68 @@ def test_can_terminate_subprocess(loop):
 	assert transport.get_returncode() != 0
 
 
+def test_loop_running(loop):
+	"""Verify that loop.is_running returns True when running"""
+	@asyncio.coroutine
+	def is_running():
+		nonlocal loop
+		assert loop.is_running()
+
+	loop.run_until_complete(is_running())
+
+
+def test_loop_not_running(loop):
+	"""Verify that loop.is_running returns False when not running"""
+	assert not loop.is_running()
+
+
 def test_can_function_as_context_manager(application):
 	"""Verify that a QEventLoop can function as its own context manager."""
 	with quamash.QEventLoop(application) as loop:
 		assert isinstance(loop, quamash.QEventLoop)
 		loop.call_soon(loop.stop)
 		loop.run_forever()
+
+
+def test_future_not_done_on_loop_shutdown(loop):
+	"""Verify RuntimError occurs when loop stopped before Future completed with run_until_complete."""
+	loop.call_later(1, loop.stop)
+	fut = asyncio.Future()
+	with pytest.raises(RuntimeError):
+		loop.run_until_complete(fut)
+
+
+def test_call_later_must_not_coroutine(loop):
+	"""Verify TypeError occurs call_later is given a coroutine."""
+	mycoro = asyncio.coroutine(lambda: None)
+
+	with pytest.raises(TypeError):
+		loop.call_soon(mycoro)
+
+
+def test_call_later_must_be_callable(loop):
+	"""Verify TypeError occurs call_later is not given a callable."""
+	not_callable = object()
+	with pytest.raises(TypeError):
+		loop.call_soon(not_callable)
+
+
+def test_call_at(loop):
+	"""Verify that loop.call_at works as expected."""
+	def mycallback():
+		nonlocal was_invoked
+		was_invoked = True
+	was_invoked = False
+
+	loop.call_at(loop.time() + .1, mycallback)
+	loop.run_until_complete(asyncio.sleep(.5))
+
+	assert was_invoked
+
+
+def test_get_set_debug(loop):
+	"""Verify get_debug and set_debug work as expected."""
+	loop.set_debug(True)
+	assert loop.get_debug()
+	loop.set_debug(False)
+	assert not loop.get_debug()
