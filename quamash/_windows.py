@@ -1,4 +1,8 @@
-import _winapi
+try:
+	import _winapi
+except ImportError:  # noqa
+	pass  # w/o guarding this import py.test can't gather doctests on platforms w/o _winapi
+
 import asyncio
 from asyncio import windows_events
 from asyncio import _overlapped
