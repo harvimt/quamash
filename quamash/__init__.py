@@ -113,7 +113,9 @@ class QThreadExecutor(QtCore.QObject):
 		if self.__been_shutdown:
 			raise RuntimeError("QThreadExecutor has been shutdown")
 
-		self._logger.debug('Closing')
+		self.__been_shutdown = True
+
+		self._logger.debug('Shutting down')
 		for i in range(len(self.__workers)):
 			# Signal workers to stop
 			self.__queue.put(None)
