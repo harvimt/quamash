@@ -1,10 +1,3 @@
-'''
-try:
-	from PyQt5.QtWidgets import QApplication
-except ImportError:
-	from PySide.QtGui import QApplication
-'''
-
 import pytest
 import quamash
 

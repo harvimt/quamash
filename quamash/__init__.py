@@ -19,12 +19,22 @@ from queue import Queue
 from concurrent.futures import Future
 
 try:
-	from PySide import QtCore
-except ImportError:
 	from PyQt5 import QtCore
 	QtCore.Signal = QtCore.pyqtSignal
+except ImportError:
+	from PySide import QtCore
 
 from ._common import with_logger
+
+
+def _get_test_app():
+	"""Helper function to get an app instance."""
+	try:
+		from PyQt5.QtWidgets import QApplication
+	except ImportError:
+		from PySide.QtGui import QApplication
+
+	return QtCore.QCoreApplication.instance() or QApplication([])
 
 
 @with_logger
@@ -143,11 +153,7 @@ def _easycallback(fn):
 	>>> try: from PyQt5.QtCore import QThread, QObject
 	... except ImportError: from PySide.QtCore import QThread, QObject
 	>>>
-	>>> try: from PyQt5.QtWidgets import QApplication
-	... except ImportError: from PySide.QtGui import QApplication
-	>>>
-	>>> app = QApplication([])
-	>>>
+	>>> import quamash
 	>>> from quamash import QEventLoop, _easycallback
 	>>> import asyncio
 	>>>
@@ -169,7 +175,7 @@ def _easycallback(fn):
 	... def mycoroutine():
 	...     myobject.mycallback()
 	>>>
-	>>> loop = QEventLoop(app)
+	>>> loop = QEventLoop(quamash._get_test_app())
 	>>> with loop:
 	...     loop.run_until_complete(mycoroutine())
 	"""
@@ -198,10 +204,6 @@ class QEventLoop(_baseclass):
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop
 	>>> import quamash, asyncio
-	>>> try: from PyQt5.QtWidgets import QApplication
-	... except ImportError: from PySide.QtCore import QApplication
-	>>>
-	>>> app = QApplication([])
 	>>>
 	>>> @asyncio.coroutine
 	... def xplusy(x, y):
@@ -209,16 +211,18 @@ class QEventLoop(_baseclass):
 	...     assert x + y == 4
 	...     yield from asyncio.sleep(.1)
 	>>>
-	>>> with QEventLoop(app) as loop:
+	>>> with QEventLoop(quamash._get_test_app()) as loop:
 	...     loop.run_until_complete(xplusy(2,2))
 	"""
-	def __init__(self, app):
+	def __init__(self, app=None):
 		self.__timers = []
-		self.__app = app
+		self.__app = app or QtCore.QCoreApplication.instance()
 		self.__is_running = False
 		self.__debug_enabled = False
 		self.__default_executor = None
 		self.__exception_handler = None
+
+		assert self.__app is not None
 
 		super().__init__()
 

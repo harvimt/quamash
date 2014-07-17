@@ -6,8 +6,10 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor  # noqa
 
 try:
 	from PyQt5.QtWidgets import QApplication
+	from PyQt5.QtCore import QCoreApplication
 except ImportError:
 	from PySide.QtGui import QApplication
+	from PySide.QtCore import QCoreApplication
 import pytest
 
 import quamash
@@ -29,7 +31,7 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 
 @pytest.fixture(scope='session')
 def application():
-	app = QApplication([])
+	app = QCoreApplication.instance() or QApplication([])
 	return app
 
 
