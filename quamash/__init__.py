@@ -431,8 +431,6 @@ class QEventLoop(_baseclass):
 		except:
 			sys.stderr.write('{}, {}\n'.format(args, kwds))
 
-	def remove(self, timer):
-		self.__timers.remove(timer)
 
 class _Cancellable:
 	def __init__(self, timer, loop):
