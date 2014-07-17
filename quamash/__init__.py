@@ -50,8 +50,10 @@ class _QThreadWorker(QtCore.QThread):
 				break
 
 			future, callback, args, kwargs = command
-			self._logger.debug('#{} got callback {} with args {} and kwargs {} from queue'
-				.format(self.__num, callback, args, kwargs))
+			self._logger.debug(
+				'#{} got callback {} with args {} and kwargs {} from queue'
+				.format(self.__num, callback, args, kwargs)
+			)
 			if future.set_running_or_notify_cancel():
 				self._logger.debug('Invoking callback')
 				r = callback(*args, **kwargs)
@@ -72,7 +74,7 @@ class QThreadExecutor(QtCore.QObject):
 	"""
 	ThreadExecutor that produces QThreads
 	Same API as `concurrent.futures.Executor`
-	
+
 	>>> from quamash import QThreadExecutor
 	>>> with QThreadExecutor(5) as executor:
 	...     f = executor.submit(lambda x: 2 + x, 2)
@@ -83,7 +85,7 @@ class QThreadExecutor(QtCore.QObject):
 		super().__init__(parent)
 		self.__max_workers = max_workers
 		self.__queue = Queue()
-		self.__workers = [_QThreadWorker(self.__queue, i+1) for i in range(max_workers)]
+		self.__workers = [_QThreadWorker(self.__queue, i + 1) for i in range(max_workers)]
 		for w in self.__workers:
 			w.start()
 
@@ -190,7 +192,7 @@ class QEventLoop(_baseclass):
 	...     yield from asyncio.sleep(.1)
 	...     assert x + y == 4
 	...     yield from asyncio.sleep(.1)
-	>>> 
+	>>>
 	>>> with QEventLoop(app) as loop:
 	...     loop.run_until_complete(xplusy(2,2))
 	"""

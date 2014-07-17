@@ -67,6 +67,7 @@ def test_can_run_tasks_in_default_executor(loop):
 
 	assert was_invoked
 
+
 def test_can_execute_subprocess(loop):
 	"""Verify that a subprocess can be executed."""
 	transport, protocol = loop.run_until_complete(loop.subprocess_exec(
@@ -75,17 +76,22 @@ def test_can_execute_subprocess(loop):
 	assert transport.get_returncode() == 0
 	assert protocol.received_stdout == 'Hello async world!'
 
+
 def test_can_terminate_subprocess(loop):
 	"""Verify that a subprocess can be terminated."""
 	# Start a never-ending process
-	transport = loop.run_until_complete(loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'import time\nwhile True: time.sleep(1)'))[0]
+	transport = loop.run_until_complete(
+		loop.subprocess_exec(
+			_SubprocessProtocol, sys.executable or 'python', '-c', 'import time\nwhile True: time.sleep(1)',
+		),
+	)[0]
 	# Terminate!
 	transport.kill()
 	# Wait for process to die
 	loop.run_forever()
 
 	assert transport.get_returncode() != 0
+
 
 def test_can_function_as_context_manager(application):
 	"""Verify that a QEventLoop can function as its own context manager."""
