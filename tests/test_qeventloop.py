@@ -1,9 +1,8 @@
 import asyncio
-import os.path
+import locale
 import logging
 import sys
-import locale
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor  # noqa
 
 try:
 	from PyQt5.QtWidgets import QApplication
@@ -11,12 +10,7 @@ except ImportError:
 	from PySide.QtGui import QApplication
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import quamash
-
-
-logging.basicConfig(
-	level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 
 
 class _SubprocessProtocol(asyncio.SubprocessProtocol):
