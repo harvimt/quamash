@@ -17,7 +17,6 @@ import time
 from functools import wraps
 from queue import Queue
 from concurrent.futures import Future
-import threading
 
 try:
 	from PySide import QtCore
@@ -108,7 +107,7 @@ class QThreadExecutor(QtCore.QObject):
 		return future
 
 	def map(self, func, *iterables, timeout=None):
-		raise NotImplemented("use as_completed on the event loop")
+		raise NotImplementedError("use as_completed on the event loop")
 
 	def shutdown(self):
 		if self.__been_shutdown:
@@ -333,12 +332,11 @@ class QEventLoop(_baseclass):
 				return f
 			callback, args = callback.callback, callback.args
 
+		executor = executor or self.__default_executor
 		if executor is None:
-			executor = self.__default_executor
-			if executor is None:
-				self._logger.debug('Creating default executor')
-				executor = self.__default_executor = QThreadExecutor()
-			self._logger.debug('Using default executor')
+			self._logger.debug('Creating default executor')
+			executor = self.__default_executor = QThreadExecutor()
+		self._logger.debug('Using default executor')
 
 		return asyncio.wrap_future(executor.submit(callback, *args))
 
@@ -414,7 +412,7 @@ class QEventLoop(_baseclass):
 		return self.__debug_enabled
 
 	def set_debug(self, enabled):
-		super(QEventLoop, self).set_debug(enabled)
+		super().set_debug(enabled)
 		self.__debug_enabled = enabled
 
 	def __enter__(self):
@@ -428,13 +426,13 @@ class QEventLoop(_baseclass):
 		finally:
 			asyncio.set_event_loop(None)
 
-	@staticmethod
-	def __log_error(*args, **kwds):
+	@classmethod
+	def __log_error(cls, *args, **kwds):
 		# In some cases, the error method itself fails, don't have a lot of options in that case
 		try:
-			self._logger.error(*args, **kwds)
+			cls._logger.error(*args, **kwds)
 		except:
-			sys.stderr.write('{}, {}\n'.format(args, kwds))
+			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
 
 
 class _Cancellable:

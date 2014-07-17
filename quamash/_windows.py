@@ -1,4 +1,3 @@
-import threading
 import _winapi
 import asyncio
 from asyncio import windows_events
