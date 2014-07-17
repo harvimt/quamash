@@ -55,26 +55,40 @@ def loop(request, application):
 
 
 @pytest.fixture(
-	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor],
+	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor],
+	#  ProcessPoolExecutor may never work
 )
 def executor(request):
 	exc_cls = request.param
 	if exc_cls is None:
 		return None
 
-	exc = exc_cls(5)  # FIXME? fixed number of workers
+	exc = exc_cls(1)  # FIXME? fixed number of workers?
 	request.addfinalizer(exc.shutdown)
 	return exc
 
 
 def test_can_run_tasks_in_executor(loop, executor):
-	"""Verify that tasks can be run in default (threaded) executor."""
+	"""Verify that tasks can be run in an executor."""
+	logging.debug('Executor: {!r}'.format(executor))
+
 	def blocking_func():
+		logging.debug('start blocking_func()')
 		nonlocal was_invoked
 		was_invoked = True
+		logging.debug('end blocking_func()')
+
+	@asyncio.coroutine
+	def blocking_task():
+		logging.debug('start blocking task()')
+		fut = loop.run_in_executor(executor, blocking_func)
+		yield from asyncio.wait_for(fut, timeout=1.0)
+		logging.debug('start blocking task()')
 
 	was_invoked = False
-	loop.run_until_complete(loop.run_in_executor(None, blocking_func))
+	logging.debug('running until complete')
+	loop.run_until_complete(blocking_task())
+	logging.debug('ran')
 
 	assert was_invoked
 
