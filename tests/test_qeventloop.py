@@ -3,6 +3,8 @@ import os.path
 import logging
 import sys
 import locale
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
 try:
 	from PyQt5.QtWidgets import QApplication
 except ImportError:
@@ -52,7 +54,20 @@ def loop(request, application):
 	return lp
 
 
-def test_can_run_tasks_in_default_executor(loop):
+@pytest.fixture(
+	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor],
+)
+def executor(request):
+	exc_cls = request.param
+	if exc_cls is None:
+		return None
+
+	exc = exc_cls(5)  # FIXME? fixed number of workers
+	request.addfinalizer(exc.shutdown)
+	return exc
+
+
+def test_can_run_tasks_in_executor(loop, executor):
 	"""Verify that tasks can be run in default (threaded) executor."""
 	def blocking_func():
 		nonlocal was_invoked
