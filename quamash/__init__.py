@@ -86,10 +86,15 @@ class QThreadExecutor(QtCore.QObject):
 		self.__max_workers = max_workers
 		self.__queue = Queue()
 		self.__workers = [_QThreadWorker(self.__queue, i + 1) for i in range(max_workers)]
+		self.__been_shutdown = False
+
 		for w in self.__workers:
 			w.start()
 
 	def submit(self, callback, *args, **kwargs):
+		if self.__been_shutdown:
+			raise RuntimeError("QThreadExecutor has been shutdown")
+
 		future = Future()
 		self._logger.debug(
 			'Submitting callback {} with args {} and kwargs {} to thread worker queue'
@@ -100,7 +105,10 @@ class QThreadExecutor(QtCore.QObject):
 	def map(self, func, *iterables, timeout=None):
 		raise NotImplemented("use as_completed on the event loop")
 
-	def close(self):
+	def shutdown(self):
+		if self.__been_shutdown:
+			raise RuntimeError("QThreadExecutor has been shutdown")
+
 		self._logger.debug('Closing')
 		for i in range(len(self.__workers)):
 			# Signal workers to stop
@@ -109,10 +117,12 @@ class QThreadExecutor(QtCore.QObject):
 			w.wait()
 
 	def __enter__(self, *args):
+		if self.__been_shutdown:
+			raise RuntimeError("QThreadExecutor has been shutdown")
 		return self
 
 	def __exit__(self, *args):
-		self.close()
+		self.shutdown()
 
 
 def _easycallback(fn):
@@ -254,7 +264,7 @@ class QEventLoop(_baseclass):
 		self.__timers = []
 		self.__app = None
 		if self.__default_executor is not None:
-			self.__default_executor.close()
+			self.__default_executor.shutdown()
 		super().close()
 
 	def call_later(self, delay, callback, *args):
