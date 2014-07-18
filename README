@@ -57,6 +57,11 @@ Testing
 Quamash is tested with `pytest`_; in order to run the test suite, just execute py.test on the
 commandline. The tests themselves are beneath the 'tests' directory.
 
+License
+=======
+You may use, modify, and redistribute this software under the terms of the `BSD License`_.
+See LICENSE.
+
 Name
 ====
 Tulip related projects are being named after other flowers, Quamash is one of the few flowers that
@@ -64,3 +69,4 @@ starts with a "Q".
 
 .. _`PEP 3156`: http://legacy.python.org/dev/peps/pep-3156/
 .. _`pytest`: http://pytest.org
+.. _`BSD License`: http://opensource.org/licenses/BSD-2-Clause

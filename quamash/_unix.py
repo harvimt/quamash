@@ -1,3 +1,6 @@
+# © 2014 Mark Harviston <mark.harviston@gmail.com>
+# © 2014 Arve Knudsen <arve.knudsen@gmail.com>
+# BSD License
 import asyncio
 from asyncio import selectors
 import collections

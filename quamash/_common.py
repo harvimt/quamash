@@ -1,3 +1,6 @@
+# © 2014 Mark Harviston <mark.harviston@gmail.com>
+# © 2014 Arve Knudsen <arve.knudsen@gmail.com>
+# BSD License
 import logging
 try:
 	from PySide import QtCore

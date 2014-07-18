@@ -1,4 +1,4 @@
-# © 2013 Mark Harviston <mark.harviston@gmail.com>
+# © 2014 Mark Harviston <mark.harviston@gmail.com>
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
 """
@@ -6,7 +6,7 @@ Implementation of the PEP 3156 Event-Loop with Qt
 """
 __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>'
 __version__ = '0.2'
-__license__ = 'BSD 2 Clause License'
+__license__ = 'BSD'
 
 import sys
 import os
