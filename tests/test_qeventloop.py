@@ -5,7 +5,9 @@ import asyncio
 import locale
 import logging
 import sys
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor  # noqa
+import ctypes
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 try:
 	from PyQt5.QtWidgets import QApplication
@@ -54,8 +56,7 @@ def loop(request, application):
 
 
 @pytest.fixture(
-	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor],
-	#  ProcessPoolExecutor may never work
+	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor]
 )
 def executor(request):
 	exc_cls = request.param
@@ -67,29 +68,35 @@ def executor(request):
 	return exc
 
 
-def test_can_run_tasks_in_executor(loop, executor):
-	"""Verify that tasks can be run in an executor."""
-	logging.debug('Executor: {!r}'.format(executor))
+class TestCanRunTasksInExecutor:
+	"""
+	This needs to be a class because pickle can't serialize closures,
+	but can serialize bound methods.
+	multiprocessing can only handle pickleable functions.
+	"""
+	def test_can_run_tasks_in_executor(self, loop, executor):
+		"""Verify that tasks can be run in an executor."""
+		logging.debug('Executor: {!r}'.format(executor))
+		logging.debug('Executor: {!r}'.format(loop))
 
-	def blocking_func():
+		manager = multiprocessing.Manager()
+		was_invoked = manager.Value(ctypes.c_int, 0)
+		logging.debug('running until complete')
+		loop.run_until_complete(self.blocking_task(loop, executor, was_invoked))
+		logging.debug('ran')
+		assert was_invoked.value == 1
+
+	def blocking_func(self, was_invoked):
 		logging.debug('start blocking_func()')
-		nonlocal was_invoked
-		was_invoked = True
+		was_invoked.value = 1
 		logging.debug('end blocking_func()')
 
 	@asyncio.coroutine
-	def blocking_task():
+	def blocking_task(self, loop, executor, was_invoked):
 		logging.debug('start blocking task()')
-		fut = loop.run_in_executor(executor, blocking_func)
+		fut = loop.run_in_executor(executor, self.blocking_func, was_invoked)
 		yield from asyncio.wait_for(fut, timeout=1.0)
 		logging.debug('start blocking task()')
-
-	was_invoked = False
-	logging.debug('running until complete')
-	loop.run_until_complete(blocking_task())
-	logging.debug('ran')
-
-	assert was_invoked
 
 
 def test_can_handle_exception_in_default_executor(loop):
