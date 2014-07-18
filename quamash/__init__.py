@@ -5,7 +5,7 @@
 Implementation of the PEP 3156 Event-Loop with Qt
 """
 __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>'
-__version__ = '0.2'
+__version__ = '0.3'
 __license__ = 'BSD'
 
 import sys

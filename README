@@ -12,6 +12,10 @@ Requirements
 ============
 Quamash requires Python 3.4 and either PyQt 5 or PySide.
 
+Installation
+============
+pip install quamash
+
 Usage
 =====
 
