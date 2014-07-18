@@ -1,14 +1,14 @@
 # © 2014 Mark Harviston <mark.harviston@gmail.com>
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
+import asyncio
 try:
 	import _winapi
+	from asyncio import windows_events
+	from asyncio import _overlapped
 except ImportError:  # noqa
 	pass  # w/o guarding this import py.test can't gather doctests on platforms w/o _winapi
 
-import asyncio
-from asyncio import windows_events
-from asyncio import _overlapped
 import math
 
 from ._common import with_logger, QtCore
