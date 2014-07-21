@@ -5,4 +5,4 @@ before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
 install: "pip install pyside pytest-pep8 pytest-cov pytest-flakes"
-script: py.test -s
+script: py.test
