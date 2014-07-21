@@ -31,7 +31,7 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 
 @pytest.fixture(scope='session')
 def application():
-	return quamash.QApplication.instance() or quamash.QApplication([])
+	return QApplication.instance() or quamash.QApplication([])
 
 
 @pytest.fixture
