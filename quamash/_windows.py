@@ -11,7 +11,8 @@ except ImportError:  # noqa
 
 import math
 
-from ._common import with_logger, QtCore
+from . import QtCore
+from ._common import with_logger
 
 
 class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):

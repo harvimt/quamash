@@ -16,23 +16,29 @@ from functools import wraps
 from queue import Queue
 from concurrent.futures import Future
 
+for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
+	try:
+		QtModule = __import__(QtModuleName)
+	except ImportError:
+		continue
+	else:
+		break
+else:
+	raise ImportError('No Qt implementations found')
+
+QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
+
 try:
-	from PyQt5 import QtCore
-	QtCore.Signal = QtCore.pyqtSignal
+	QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
 except ImportError:
-	from PySide import QtCore
+	QtGui = __import__(QtModuleName + '.QtWidgets', fromlist=(QtModuleName,))
+
+
+if not hasattr(QtCore, 'Signal'):
+	QtCore.Signal = QtCore.pyqtSignal
+
 
 from ._common import with_logger
-
-
-def _get_test_app():
-	"""Helper function to get an app instance."""
-	try:
-		from PyQt5.QtWidgets import QApplication
-	except ImportError:
-		from PySide.QtGui import QApplication
-
-	return QtCore.QCoreApplication.instance() or QApplication([])
 
 
 @with_logger
@@ -148,12 +154,13 @@ def _easycallback(fn):
 
 	Remember: only objects that inherit from QObject can support signals/slots
 
-	>>> try: from PyQt5.QtCore import QThread, QObject
-	... except ImportError: from PySide.QtCore import QThread, QObject
+	>>> import asyncio
 	>>>
 	>>> import quamash
-	>>> from quamash import QEventLoop, _easycallback
-	>>> import asyncio
+	>>> from quamash import QEventLoop, QtCore, QtGui
+	>>> QThread, QObject = quamash.QtCore.QThread, quamash.QtCore.QObject
+	>>>
+	>>> app = QtCore.QCoreApplication.instance() or QtGui.QApplication([])
 	>>>
 	>>> global_thread = QThread.currentThread()
 	>>> class MyObject(QObject):
@@ -173,7 +180,7 @@ def _easycallback(fn):
 	... def mycoroutine():
 	...     myobject.mycallback()
 	>>>
-	>>> loop = QEventLoop(quamash._get_test_app())
+	>>> loop = QEventLoop(app)
 	>>> with loop:
 	...     loop.run_until_complete(mycoroutine())
 	"""
@@ -201,7 +208,10 @@ else:
 class QEventLoop(_baseclass):
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop
+
 	>>> import quamash, asyncio
+	>>> from quamash import QtCore, QtGui
+	>>> app = QtCore.QCoreApplication.instance() or QtGui.QApplication([])
 	>>>
 	>>> @asyncio.coroutine
 	... def xplusy(x, y):
@@ -209,8 +219,8 @@ class QEventLoop(_baseclass):
 	...     assert x + y == 4
 	...     yield from asyncio.sleep(.1)
 	>>>
-	>>> with QEventLoop(quamash._get_test_app()) as loop:
-	...     loop.run_until_complete(xplusy(2,2))
+	>>> with QEventLoop(app) as loop:
+	...     loop.run_until_complete(xplusy(2, 2))
 	"""
 	def __init__(self, app=None):
 		self.__timers = []

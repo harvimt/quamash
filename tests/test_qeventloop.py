@@ -9,15 +9,11 @@ import ctypes
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
-try:
-	from PyQt5.QtWidgets import QApplication
-	from PyQt5.QtCore import QCoreApplication
-except ImportError:
-	from PySide.QtGui import QApplication
-	from PySide.QtCore import QCoreApplication
-import pytest
+from quamash import QtCore, QtGui
 
 import quamash
+
+import pytest
 
 
 class _SubprocessProtocol(asyncio.SubprocessProtocol):
@@ -36,8 +32,7 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 
 @pytest.fixture(scope='session')
 def application():
-	app = QCoreApplication.instance() or QApplication([])
-	return app
+	return QtCore.QCoreApplication.instance() or QtGui.QApplication([])
 
 
 @pytest.fixture

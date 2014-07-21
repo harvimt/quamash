@@ -5,7 +5,7 @@ import asyncio
 from asyncio import selectors
 import collections
 
-from ._common import QtCore, with_logger
+from . import QtCore, with_logger
 
 
 EVENT_READ = (1 << 0)
