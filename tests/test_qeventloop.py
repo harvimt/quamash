@@ -76,8 +76,8 @@ class TestCanRunTasksInExecutor:
 	"""
 	def test_can_run_tasks_in_executor(self, loop, executor):
 		"""Verify that tasks can be run in an executor."""
+		logging.debug('Loop: {!r}'.format(loop))
 		logging.debug('Executor: {!r}'.format(executor))
-		logging.debug('Executor: {!r}'.format(loop))
 
 		manager = multiprocessing.Manager()
 		was_invoked = manager.Value(ctypes.c_int, 0)
