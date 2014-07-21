@@ -9,8 +9,6 @@ import ctypes
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
-from quamash import QtCore, QtGui
-
 import quamash
 
 import pytest
@@ -32,7 +30,7 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 
 @pytest.fixture(scope='session')
 def application():
-	return QtCore.QCoreApplication.instance() or QtGui.QApplication([])
+	return QApplication.instance() or quamash.QApplication([])
 
 
 @pytest.fixture
