@@ -29,9 +29,9 @@ else:
 QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
 
 try:
-	QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
-except ImportError:
 	QtGui = __import__(QtModuleName + '.QtWidgets', fromlist=(QtModuleName,))
+except ImportError:
+	QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
 
 
 if not hasattr(QtCore, 'Signal'):
