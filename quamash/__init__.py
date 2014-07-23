@@ -229,6 +229,8 @@ class QEventLoop(_baseclass):
 		self.__debug_enabled = False
 		self.__default_executor = None
 		self.__exception_handler = None
+		self.__read_notifiers = {}
+		self.__write_notifiers = {}
 
 		assert self.__app is not None
 
@@ -322,6 +324,28 @@ class QEventLoop(_baseclass):
 	def time(self):
 		"""Get time according to event loop's clock."""
 		return time.monotonic()
+
+	def add_reader(self, fd, callback, *args):
+		"""Register a callback for when a file descriptor is ready for reading."""
+		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
+		notifier.setEnabled(True)
+		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
+		notifier.activated.connect(lambda: callback(*args))
+		self.__read_notifiers[fd] = notifier
+
+	def remove_reader(self, fd):
+		raise NotImplementedError
+
+	def add_writer(self, fd, callback, *args):
+		"""Register a callback for when a file descriptor is ready for writing."""
+		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Write)
+		notifier.setEnabled(True)
+		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
+		notifier.activated.connect(lambda: callback(*args))
+		self.__write_notifiers[fd] = notifier
+
+	def remove_writer(self, fd):
+		raise NotImplementedError
 
 	# Methods for interacting with threads.
 
