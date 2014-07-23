@@ -235,6 +235,7 @@ def sock_pair(request):
 		if err.errno != 10035:
 			raise
 
+
 	# Use select to wait for connect() to succeed.
 	import select
 	timeout = 1
