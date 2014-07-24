@@ -198,11 +198,21 @@ def test_get_set_debug(loop):
 	assert not loop.get_debug()
 
 
-def _create_sock_pair(port=0):
+@pytest.fixture
+def sock_pair(request):
 	"""Create socket pair.
 
 	If socket.socketpair isn't available, we emulate it.
 	"""
+	def fin():
+		if client_sock is not None:
+			client_sock.close()
+		if srv_sock is not None:
+			srv_sock.close()
+
+	client_sock = srv_sock = None
+	request.addfinalizer(fin)
+
 	# See if socketpair() is available.
 	have_socketpair = hasattr(socket, 'socketpair')
 	if have_socketpair:
@@ -212,7 +222,7 @@ def _create_sock_pair(port=0):
 	# Create a non-blocking temporary server socket
 	temp_srv_sock = socket.socket()
 	temp_srv_sock.setblocking(False)
-	temp_srv_sock.bind(('', port))
+	temp_srv_sock.bind(('', 0))
 	port = temp_srv_sock.getsockname()[1]
 	temp_srv_sock.listen(1)
 
@@ -238,7 +248,7 @@ def _create_sock_pair(port=0):
 	return client_sock, srv_sock
 
 
-def test_can_add_reader(loop):
+def test_can_add_reader(loop, sock_pair):
 	"""Verify that we can add a reader callback to an event loop."""
 	def can_read():
 		data = srv_sock.recv(1)
@@ -255,32 +265,62 @@ def test_can_add_reader(loop):
 		client_sock.close()
 
 	ref_msg = b'a'
-	client_sock, srv_sock = _create_sock_pair()
-	try:
-		loop.call_soon(write)
+	client_sock, srv_sock = sock_pair
+	loop.call_soon(write)
 
-		got_msg = None
-		fut = asyncio.Future()
-		loop.add_reader(srv_sock.fileno(), can_read)
-		loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
-	finally:
-		client_sock.close()
-		srv_sock.close()
+	got_msg = None
+	fut = asyncio.Future()
+	loop.add_reader(srv_sock.fileno(), can_read)
+	assert len(loop._read_notifiers) == 1, 'Notifier should be added'
+	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
 
 	assert got_msg == ref_msg
 
 
-def test_can_add_writer(loop):
+def test_can_remove_reader(loop, sock_pair):
+	"""Verify that we can remove a reader callback from an event loop."""
+	def can_read():
+		data = srv_sock.recv(1)
+		if len(data) != 1:
+			return
+
+		nonlocal got_msg
+		got_msg = data
+
+	client_sock, srv_sock = sock_pair
+
+	got_msg = None
+	loop.add_reader(srv_sock.fileno(), can_read)
+	loop.remove_reader(srv_sock.fileno())
+	assert not loop._read_notifiers, 'Notifier should be removed'
+	client_sock.send(b'a')
+	client_sock.close()
+	# Run for a short while to see if we get a read notification
+	loop.call_later(0.1, loop.stop)
+	loop.run_forever()
+
+	assert got_msg is None, 'Should not have received a read notification'
+
+
+def test_can_add_writer(loop, sock_pair):
 	"""Verify that we can add a writer callback to an event loop."""
 	def can_write():
 		# Indicate that we're done
 		fut.set_result(None)
 
-	client_sock, srv_sock = _create_sock_pair()
-	try:
-		fut = asyncio.Future()
-		loop.add_writer(client_sock.fileno(), can_write)
-		loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
-	finally:
-		client_sock.close()
-		srv_sock.close()
+	client_sock, srv_sock = sock_pair
+	fut = asyncio.Future()
+	loop.add_writer(client_sock.fileno(), can_write)
+	assert len(loop._write_notifiers) == 1, 'Notifier should be added'
+	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
+
+
+def test_can_remove_writer(loop, sock_pair):
+	"""Verify that we can remove a writer callback from an event loop."""
+	def can_write():
+		pass
+
+	client_sock, srv_sock = sock_pair
+	loop.add_writer(client_sock.fileno(), can_write)
+	loop.remove_writer(client_sock.fileno())
+	assert not loop._write_notifiers, 'Notifier should be removed'
