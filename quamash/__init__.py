@@ -306,16 +306,17 @@ class QEventLoop(_baseclass):
 
 	def _add_callback(self, handle, delay=0):
 		def upon_timeout():
+			assert timer in self.__timers, 'Timer {} not among {}'.format(timer, self.__timers)
 			self.__timers.remove(timer)
 			self._logger.debug('Callback timer fired, calling {}'.format(handle))
 			handle._run()
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
 		timer = QtCore.QTimer(self.__app)
+		self.__timers.append(timer)
 		timer.timeout.connect(upon_timeout)
 		timer.setSingleShot(True)
 		timer.start(delay * 1000)
-		self.__timers.append(timer)
 
 		return _Cancellable(timer, self)
 
