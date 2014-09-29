@@ -78,6 +78,7 @@ class TestCanRunTasksInExecutor:
 		logging.debug('running until complete')
 		loop.run_until_complete(self.blocking_task(loop, executor, was_invoked))
 		logging.debug('ran')
+
 		assert was_invoked.value == 1
 
 	def blocking_func(self, was_invoked):
@@ -89,7 +90,7 @@ class TestCanRunTasksInExecutor:
 	def blocking_task(self, loop, executor, was_invoked):
 		logging.debug('start blocking task()')
 		fut = loop.run_in_executor(executor, self.blocking_func, was_invoked)
-		yield from asyncio.wait_for(fut, timeout=1.0)
+		yield from asyncio.wait_for(fut, timeout=5.0)
 		logging.debug('start blocking task()')
 
 
