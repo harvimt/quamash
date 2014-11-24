@@ -313,10 +313,10 @@ class QEventLoop(_baseclass):
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
 		timer = QtCore.QTimer(self.__app)
-		self.__timers.append(timer)
 		timer.timeout.connect(upon_timeout)
 		timer.setSingleShot(True)
 		timer.start(delay * 1000)
+		self.__timers.append(timer)
 
 		return _Cancellable(timer, self)
 
