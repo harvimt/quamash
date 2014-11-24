@@ -27,12 +27,12 @@ else:
 	raise ImportError('No Qt implementations found')
 
 QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
-
-try:
-	QtGui = __import__(QtModuleName + '.QtWidgets', fromlist=(QtModuleName,))
-except ImportError:
-	QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
-
+QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
+if QtModuleName == 'PyQt5':
+	from PyQt5 import QtWidgets
+	QApplication = QtWidgets.QApplication
+else:
+	QApplication = QtGui.QApplication
 
 if not hasattr(QtCore, 'Signal'):
 	QtCore.Signal = QtCore.pyqtSignal
@@ -157,10 +157,10 @@ def _easycallback(fn):
 	>>> import asyncio
 	>>>
 	>>> import quamash
-	>>> from quamash import QEventLoop, QtCore, QtGui
+	>>> from quamash import QEventLoop, QtCore, QtGui, QApplication
 	>>> QThread, QObject = quamash.QtCore.QThread, quamash.QtCore.QObject
 	>>>
-	>>> app = QtCore.QCoreApplication.instance() or QtGui.QApplication([])
+	>>> app = QApplication.instance() or QApplication([])
 	>>>
 	>>> global_thread = QThread.currentThread()
 	>>> class MyObject(QObject):
@@ -210,8 +210,8 @@ class QEventLoop(_baseclass):
 	Implementation of asyncio event loop that uses the Qt Event loop
 
 	>>> import quamash, asyncio
-	>>> from quamash import QtCore, QtGui
-	>>> app = QtCore.QCoreApplication.instance() or QtGui.QApplication([])
+	>>> from quamash import QtCore, QtGui, QApplication
+	>>> app = QApplication.instance() or QApplication([])
 	>>>
 	>>> @asyncio.coroutine
 	... def xplusy(x, y):
@@ -224,7 +224,8 @@ class QEventLoop(_baseclass):
 	"""
 	def __init__(self, app=None):
 		self.__timers = []
-		self.__app = app or QtCore.QCoreApplication.instance()
+		self.__app = app or QApplication.instance()
+		assert self.__app is not None, 'No QApplication has been instantiated'
 		self.__is_running = False
 		self.__debug_enabled = False
 		self.__default_executor = None
