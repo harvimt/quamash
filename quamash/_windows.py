@@ -16,6 +16,7 @@ from ._common import with_logger
 
 
 class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
+	"""Proactor based event loop."""
 	def __init__(self):
 		QtCore.QObject.__init__(self)
 		asyncio.ProactorEventLoop.__init__(self, _IocpProactor())
@@ -24,6 +25,7 @@ class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
 		self.__event_poller.sig_events.connect(self._process_events)
 
 	def _process_events(self, events):
+		"""Process events from proactor."""
 		for f, callback, transferred, key, ov in events:
 			try:
 				self._logger.debug('Invoking event callback {}'.format(callback))
@@ -35,7 +37,7 @@ class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
 				f.set_result(value)
 
 	def _before_run_forever(self):
-		self.__event_poller.start(self._selector)
+		self.__event_poller.start(self._proactor)
 
 	def _after_run_forever(self):
 		self.__event_poller.stop()
@@ -105,11 +107,11 @@ class _IocpProactor(windows_events.IocpProactor):
 
 @with_logger
 class _EventWorker(QtCore.QThread):
-	def __init__(self, selector, parent):
+	def __init__(self, proactor, parent):
 		super().__init__()
 
 		self.__stop = False
-		self.__selector = selector
+		self.__proactor = proactor
 		self.__sig_events = parent.sig_events
 		self.__semaphore = QtCore.QSemaphore()
 
@@ -127,7 +129,7 @@ class _EventWorker(QtCore.QThread):
 		self.__semaphore.release()
 
 		while not self.__stop:
-			events = self.__selector.select(0.01)
+			events = self.__proactor.select(0.01)
 			if events:
 				self._logger.debug('Got events from poll: {}'.format(events))
 				self.__sig_events.emit(events)
@@ -140,9 +142,9 @@ class _EventPoller(QtCore.QObject):
 	"""Polling of events in separate thread."""
 	sig_events = QtCore.Signal(list)
 
-	def start(self, selector):
-		self._logger.debug('Starting (selector: {})...'.format(selector))
-		self.__worker = _EventWorker(selector, self)
+	def start(self, proactor):
+		self._logger.debug('Starting (proactor: {})...'.format(proactor))
+		self.__worker = _EventWorker(proactor, self)
 		self.__worker.start()
 
 	def stop(self):

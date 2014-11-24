@@ -229,6 +229,8 @@ class QEventLoop(_baseclass):
 		self.__debug_enabled = False
 		self.__default_executor = None
 		self.__exception_handler = None
+		self._read_notifiers = {}
+		self._write_notifiers = {}
 
 		assert self.__app is not None
 
@@ -283,6 +285,10 @@ class QEventLoop(_baseclass):
 		self.__app = None
 		if self.__default_executor is not None:
 			self.__default_executor.shutdown()
+
+		self._read_notifiers = {}
+		self._write_notifiers = {}
+
 		super().close()
 
 	def call_later(self, delay, callback, *args):
@@ -322,6 +328,32 @@ class QEventLoop(_baseclass):
 	def time(self):
 		"""Get time according to event loop's clock."""
 		return time.monotonic()
+
+	def add_reader(self, fd, callback, *args):
+		"""Register a callback for when a file descriptor is ready for reading."""
+		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
+		notifier.setEnabled(True)
+		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
+		notifier.activated.connect(lambda: callback(*args))
+		self._read_notifiers[fd] = notifier
+
+	def remove_reader(self, fd):
+		"""Remove reader callback."""
+		notifier = self._read_notifiers.pop(fd)
+		notifier.setEnabled(False)
+
+	def add_writer(self, fd, callback, *args):
+		"""Register a callback for when a file descriptor is ready for writing."""
+		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Write)
+		notifier.setEnabled(True)
+		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
+		notifier.activated.connect(lambda: callback(*args))
+		self._write_notifiers[fd] = notifier
+
+	def remove_writer(self, fd):
+		"""Remove writer callback."""
+		notifier = self._write_notifiers.pop(fd)
+		notifier.setEnabled(False)
 
 	# Methods for interacting with threads.
 
