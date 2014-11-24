@@ -306,6 +306,7 @@ class QEventLoop(_baseclass):
 
 	def _add_callback(self, handle, delay=0):
 		def upon_timeout():
+			assert timer in self.__timers, 'Timer {} not among {}'.format(timer, self.__timers)
 			self.__timers.remove(timer)
 			self._logger.debug('Callback timer fired, calling {}'.format(handle))
 			handle._run()
