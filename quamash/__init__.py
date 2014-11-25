@@ -337,7 +337,9 @@ class QEventLoop(_baseclass):
 		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
-		notifier.activated.connect(lambda: callback(*args))
+		notifier.activated.connect(
+			lambda: self.__on_notifier_ready(notifier, callback, args)
+		)
 		self._read_notifiers[fd] = notifier
 
 	def remove_reader(self, fd):
@@ -351,7 +353,9 @@ class QEventLoop(_baseclass):
 		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Write)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
-		notifier.activated.connect(lambda: callback(*args))
+		notifier.activated.connect(
+			lambda: self.__on_notifier_ready(notifier, callback, args)
+		)
 		self._write_notifiers[fd] = notifier
 
 	def remove_writer(self, fd):
@@ -359,6 +363,17 @@ class QEventLoop(_baseclass):
 		self._logger.debug('Removing writer callback for file descriptor {}'.format(fd))
 		notifier = self._write_notifiers.pop(fd)
 		notifier.setEnabled(False)
+
+	@staticmethod
+	def __on_notifier_ready(notifier, callback, args):
+		# It can be necessary to disable QSocketNotifier when e.g. checking
+		# ZeroMQ sockets for events
+		enabled = notifier.isEnabled()
+		notifier.setEnabled(False)
+		try:
+			callback(*args)
+		finally:
+			notifier.setEnabled(enabled)
 
 	# Methods for interacting with threads.
 
