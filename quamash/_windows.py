@@ -83,9 +83,9 @@ class _IocpProactor(windows_events.IocpProactor):
 			# self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
 			# 	ms, threading.get_ident()))
 			status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
-
 			if status is None:
 				break
+
 			err, transferred, key, address = status
 			try:
 				f, ov, obj, callback = self._cache.pop(address)
@@ -99,7 +99,8 @@ class _IocpProactor(windows_events.IocpProactor):
 
 			if obj in self._stopped_serving:
 				f.cancel()
-			elif not f.cancelled():
+			# Futures might already be resolved or cancelled
+			elif not f.done():
 				self.__events.append((f, callback, transferred, key, ov))
 
 			ms = 0
