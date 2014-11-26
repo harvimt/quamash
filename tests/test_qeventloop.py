@@ -250,6 +250,9 @@ def sock_pair(request):
 def test_can_add_reader(loop, sock_pair):
 	"""Verify that we can add a reader callback to an event loop."""
 	def can_read():
+		if fut.done():
+			return
+
 		data = srv_sock.recv(1)
 		if len(data) != 1:
 			return
@@ -307,8 +310,9 @@ def test_can_remove_reader(loop, sock_pair):
 def test_can_add_writer(loop, sock_pair):
 	"""Verify that we can add a writer callback to an event loop."""
 	def can_write():
-		# Indicate that we're done
-		fut.set_result(None)
+		if not fut.done():
+			# Indicate that we're done
+			fut.set_result(None)
 		client_sock.close()
 
 	client_sock, _ = sock_pair
