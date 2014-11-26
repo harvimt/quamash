@@ -313,7 +313,7 @@ def test_can_add_writer(loop, sock_pair):
 		if not fut.done():
 			# Indicate that we're done
 			fut.set_result(None)
-		client_sock.close()
+			client_sock.close()
 
 	client_sock, _ = sock_pair
 	fut = asyncio.Future()
@@ -328,3 +328,56 @@ def test_can_remove_writer(loop, sock_pair):
 	loop.add_writer(client_sock.fileno(), lambda: None)
 	loop.remove_writer(client_sock.fileno())
 	assert not loop._write_notifiers, 'Notifier should be removed'
+
+
+def test_add_reader_should_disable_qsocket_notifier_on_callback(loop, sock_pair):
+	"""Verify that add_reader disables QSocketNotifier during callback."""
+	def can_read():
+		nonlocal num_calls
+		num_calls += 1
+
+		if num_calls == 2:
+			# Since we get called again, the QSocketNotifier should've been re-enabled before
+			# this call (although disabled during)
+			assert not notifier.isEnabled()
+			srv_sock.recv(1)
+			fut.set_result(None)
+			return
+
+		assert not notifier.isEnabled()
+
+	def write():
+		client_sock.send(b'a')
+		client_sock.close()
+
+	num_calls = 0
+	client_sock, srv_sock = sock_pair
+	loop.call_soon(write)
+
+	fut = asyncio.Future()
+	loop.add_reader(srv_sock.fileno(), can_read)
+	notifier = loop._read_notifiers[srv_sock.fileno()]
+	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
+
+
+def test_add_writer_should_disable_qsocket_notifier_on_callback(loop, sock_pair):
+	"""Verify that add_writer disables QSocketNotifier during callback."""
+	def can_write():
+		nonlocal num_calls
+		num_calls += 1
+
+		if num_calls == 2:
+			# Since we get called again, the QSocketNotifier should've been re-enabled before
+			# this call (although disabled during)
+			assert not notifier.isEnabled()
+			fut.set_result(None)
+			return
+
+		assert not notifier.isEnabled()
+
+	num_calls = 0
+	client_sock, srv_sock = sock_pair
+	fut = asyncio.Future()
+	loop.add_writer(client_sock.fileno(), can_write)
+	notifier = loop._write_notifiers[client_sock.fileno()]
+	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
