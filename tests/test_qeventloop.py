@@ -267,10 +267,11 @@ def test_can_add_reader(loop, sock_pair):
 	client_sock, srv_sock = sock_pair
 	loop.call_soon(write)
 
+	exp_num_notifiers = len(loop._read_notifiers) + 1
 	got_msg = None
 	fut = asyncio.Future()
 	loop.add_reader(srv_sock.fileno(), can_read)
-	assert len(loop._read_notifiers) == 1, 'Notifier should be added'
+	assert len(loop._read_notifiers) == exp_num_notifiers, 'Notifier should be added'
 	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
 
 	assert got_msg == ref_msg
