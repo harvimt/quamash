@@ -342,6 +342,7 @@ def test_add_reader_should_disable_qsocket_notifier_on_callback(loop, sock_pair)
 			assert not notifier.isEnabled()
 			srv_sock.recv(1)
 			fut.set_result(None)
+			srv_sock.close()
 			return
 
 		assert not notifier.isEnabled()
@@ -371,12 +372,13 @@ def test_add_writer_should_disable_qsocket_notifier_on_callback(loop, sock_pair)
 			# this call (although disabled during)
 			assert not notifier.isEnabled()
 			fut.set_result(None)
+			client_sock.close()
 			return
 
 		assert not notifier.isEnabled()
 
 	num_calls = 0
-	client_sock, srv_sock = sock_pair
+	client_sock, _ = sock_pair
 	fut = asyncio.Future()
 	loop.add_writer(client_sock.fileno(), can_write)
 	notifier = loop._write_notifiers[client_sock.fileno()]
