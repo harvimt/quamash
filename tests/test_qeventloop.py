@@ -258,6 +258,7 @@ def test_can_add_reader(loop, sock_pair):
 		got_msg = data
 		# Indicate that we're done
 		fut.set_result(None)
+		srv_sock.close()
 
 	def write():
 		client_sock.send(ref_msg)
@@ -308,8 +309,9 @@ def test_can_add_writer(loop, sock_pair):
 	def can_write():
 		# Indicate that we're done
 		fut.set_result(None)
+		client_sock.close()
 
-	client_sock, srv_sock = sock_pair
+	client_sock, _ = sock_pair
 	fut = asyncio.Future()
 	loop.add_writer(client_sock.fileno(), can_write)
 	assert len(loop._write_notifiers) == 1, 'Notifier should be added'
@@ -318,10 +320,7 @@ def test_can_add_writer(loop, sock_pair):
 
 def test_can_remove_writer(loop, sock_pair):
 	"""Verify that we can remove a writer callback from an event loop."""
-	def can_write():
-		pass
-
-	client_sock, srv_sock = sock_pair
-	loop.add_writer(client_sock.fileno(), can_write)
+	client_sock, _ = sock_pair
+	loop.add_writer(client_sock.fileno(), lambda: None)
 	loop.remove_writer(client_sock.fileno())
 	assert not loop._write_notifiers, 'Notifier should be removed'
