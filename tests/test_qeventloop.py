@@ -291,8 +291,9 @@ def test_can_remove_reader(loop, sock_pair):
 
 	got_msg = None
 	loop.add_reader(srv_sock.fileno(), can_read)
+	exp_num_notifiers = len(loop._read_notifiers) - 1
 	loop.remove_reader(srv_sock.fileno())
-	assert not loop._read_notifiers, 'Notifier should be removed'
+	assert len(loop._read_notifiers) == exp_num_notifiers, 'Notifier should be removed'
 	client_sock.send(b'a')
 	client_sock.close()
 	# Run for a short while to see if we get a read notification
