@@ -223,6 +223,7 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 		self._logger.debug('Waking on socket notification, {} signal callback(s) waiting'.format(
 			len(self._signal_safe_callbacks)
 		))
+
 		# Acknowledge command
 		self._ssock.recv(1)
 		for handle in self._signal_safe_callbacks[:]:

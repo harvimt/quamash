@@ -345,8 +345,14 @@ class QEventLoop(_baseclass):
 	def remove_reader(self, fd):
 		"""Remove reader callback."""
 		self._logger.debug('Removing reader callback for file descriptor {}'.format(fd))
-		notifier = self._read_notifiers.pop(fd)
-		notifier.setEnabled(False)
+		try:
+			notifier = self._read_notifiers.pop(fd)
+		except KeyError:
+			self._logger.warning(
+				'Attempt to remove non-existent reader callback for file descriptor {}'.format(fd)
+			)
+		else:
+			notifier.setEnabled(False)
 
 	def add_writer(self, fd, callback, *args):
 		"""Register a callback for when a file descriptor is ready for writing."""
@@ -361,8 +367,14 @@ class QEventLoop(_baseclass):
 	def remove_writer(self, fd):
 		"""Remove writer callback."""
 		self._logger.debug('Removing writer callback for file descriptor {}'.format(fd))
-		notifier = self._write_notifiers.pop(fd)
-		notifier.setEnabled(False)
+		try:
+			notifier = self._write_notifiers.pop(fd)
+		except KeyError:
+			self._logger.warning(
+				'Attempt to remove non-existent writer callback for file descriptor {}'.format(fd)
+			)
+		else:
+			notifier.setEnabled(False)
 
 	@staticmethod
 	def __on_notifier_ready(notifier, callback, args):
