@@ -224,12 +224,13 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 			len(self._signal_safe_callbacks)
 		))
 
-		# Acknowledge command
-		self._ssock.recv(1)
-		for handle in self._signal_safe_callbacks[:]:
-			self._logger.debug('Scheduling signal callback {}'.format(handle))
-			self._signal_safe_callbacks.remove(handle)
-			self._add_callback(handle)
+		if self._ssock is not None:
+			# Acknowledge command
+			self._ssock.recv(1)
+			for handle in self._signal_safe_callbacks[:]:
+				self._logger.debug('Scheduling signal callback {}'.format(handle))
+				self._signal_safe_callbacks.remove(handle)
+				self._add_callback(handle)
 
 
 baseclass = _SelectorEventLoop
