@@ -282,15 +282,16 @@ class QEventLoop(_baseclass):
 
 	def close(self):
 		"""Close event loop."""
-		self.__timers = []
-		self.__app = None
+		self._logger.debug('Closing event loop...')
 		if self.__default_executor is not None:
 			self.__default_executor.shutdown()
 
+		super().close()
+
+		self.__timers = []
+		self.__app = None
 		self._read_notifiers = {}
 		self._write_notifiers = {}
-
-		super().close()
 
 	def call_later(self, delay, callback, *args):
 		"""Register callback to be invoked after a certain delay."""
@@ -341,6 +342,7 @@ class QEventLoop(_baseclass):
 
 	def remove_reader(self, fd):
 		"""Remove reader callback."""
+		self._logger.debug('Removing reader callback for file descriptor {}'.format(fd))
 		notifier = self._read_notifiers.pop(fd)
 		notifier.setEnabled(False)
 
@@ -354,6 +356,7 @@ class QEventLoop(_baseclass):
 
 	def remove_writer(self, fd):
 		"""Remove writer callback."""
+		self._logger.debug('Removing writer callback for file descriptor {}'.format(fd))
 		notifier = self._write_notifiers.pop(fd)
 		notifier.setEnabled(False)
 
