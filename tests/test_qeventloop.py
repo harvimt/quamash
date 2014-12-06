@@ -40,10 +40,19 @@ def loop(request, application):
 	asyncio.set_event_loop(lp)
 
 	def fin():
+		sys.excepthook = orig_excepthook
+
 		try:
 			lp.close()
 		finally:
 			asyncio.set_event_loop(None)
+
+	def excepthook(type, *args):
+		lp.stop()
+		orig_excepthook(type, *args)
+
+	orig_excepthook = sys.excepthook
+	sys.excepthook = excepthook
 
 	request.addfinalizer(fin)
 	return lp
