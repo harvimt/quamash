@@ -15,16 +15,25 @@ import time
 from functools import wraps
 from queue import Queue
 from concurrent.futures import Future
+import logging
+logger = logging.getLogger('quamash')
 
-for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
-	try:
-		QtModule = __import__(QtModuleName)
-	except ImportError:
-		continue
+try:
+	QtModuleName = os.environ['QUAMASH_QTIMPL']
+	logger.info('Forcing use of %s as Qt Implementation', QtModuleName)
+	QtModule = __import__(QtModuleName)
+except KeyError:
+	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
+		try:
+			QtModule = __import__(QtModuleName)
+		except ImportError:
+			continue
+		else:
+			break
 	else:
-		break
-else:
-	raise ImportError('No Qt implementations found')
+		raise ImportError('No Qt implementations found')
+
+logger.info('Using Qt Implementation: %s', QtModuleName)
 
 QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
 QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))

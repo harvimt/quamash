@@ -4,7 +4,7 @@ python:
 before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
-install: "pip install pyside pytest-pep8 pytest-cov pytest-flakes"
+install: "pip install wheelhouse/PySide-1.2.2-cp34-cp34m-linux_x86_64.whl pytest-pep8 pytest-cov pytest-flakes"
 script: py.test
 cache:
   directories:
