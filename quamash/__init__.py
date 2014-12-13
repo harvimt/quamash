@@ -12,6 +12,7 @@ import sys
 import os
 import asyncio
 import time
+import functools
 from functools import wraps
 from queue import Queue
 from concurrent.futures import Future
@@ -493,3 +494,20 @@ class _Cancellable:
 
 	def cancel(self):
 		self.__timer.stop()
+
+def _inline_async_done(qloop, task):
+        qloop.quit()
+
+def inline_async(coro):
+        """
+        Execute the given coroutine *coro* in its own Qt QEventLoop. This has
+        the effect that the coroutine runs asynchronously, but blocks the
+        current function, similar to what happens when calling `QDialog.exec`.
+        """
+
+        # the implementation is based on what happens in QDialog::exec
+        qloop = QtCore.QEventLoop()
+        task = asyncio.async(coro)
+        task.add_done_callback(functools.partial(_inline_async_done, qloop))
+        qloop.exec()
+        return task.result()
