@@ -71,12 +71,18 @@ def executor(request):
 	return exc
 
 
+@pytest.fixture
+def TestException():
+	class TestException(Exception): pass
+	return TestException
+
 class TestCanRunTasksInExecutor:
 	"""
 	This needs to be a class because pickle can't serialize closures,
 	but can serialize bound methods.
 	multiprocessing can only handle pickleable functions.
 	"""
+
 	def test_can_run_tasks_in_executor(self, loop, executor):
 		"""Verify that tasks can be run in an executor."""
 		logging.debug('Loop: {!r}'.format(loop))
@@ -89,6 +95,21 @@ class TestCanRunTasksInExecutor:
 		logging.debug('ran')
 
 		assert was_invoked.value == 1
+
+	def test_can_handle_exception_in_executor(self, TestException, loop, executor):
+		if isinstance(executor, ProcessPoolExecutor):
+			pytest.xfail("can't catch ProcessPoolExecutor exceptions (yet)")
+
+		with pytest.raises(TestException) as excinfo:
+			loop.run_until_complete(asyncio.wait_for(
+				loop.run_in_executor(executor, self.blocking_failure, TestException),
+				timeout=3.0,
+			))
+		
+		assert str(excinfo.value) == 'Testing'
+
+	def blocking_failure(self, TestException):
+		raise TestException('Testing')
 
 	def blocking_func(self, was_invoked):
 		logging.debug('start blocking_func()')
@@ -103,15 +124,6 @@ class TestCanRunTasksInExecutor:
 		logging.debug('start blocking task()')
 
 
-def test_can_handle_exception_in_default_executor(loop):
-	"""Verify that exceptions from tasks run in default (threaded) executor are handled."""
-	def blocking_func():
-		raise Exception('Testing')
-
-	with pytest.raises(Exception) as excinfo:
-		loop.run_until_complete(loop.run_in_executor(None, blocking_func))
-
-	assert str(excinfo.value) == 'Testing'
 
 
 def test_can_execute_subprocess(loop):
