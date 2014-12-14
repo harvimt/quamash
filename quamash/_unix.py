@@ -187,10 +187,6 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 		selector = _Selector(self)
 		asyncio.SelectorEventLoop.__init__(self, selector)
 
-		socket_notifier = self.__socket_notifier = QtCore.QSocketNotifier(
-			self._ssock.fileno(), QtCore.QSocketNotifier.Read)
-		socket_notifier.activated.connect(self.__wake_on_socket)
-
 	def _before_run_forever(self):
 		pass
 
@@ -213,24 +209,5 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 			else:
 				self._logger.debug('Invoking writer callback: {}'.format(writer))
 				writer._run()
-
-	def _add_callback_signalsafe(self, handle):
-		"""Add callback in signal safe manner."""
-		self._signal_safe_callbacks.append(handle)
-		self._write_to_self()
-
-	def __wake_on_socket(self):
-		self._logger.debug('Waking on socket notification, {} signal callback(s) waiting'.format(
-			len(self._signal_safe_callbacks)
-		))
-
-		if self._ssock is not None:
-			# Acknowledge command
-			self._ssock.recv(1)
-			for handle in self._signal_safe_callbacks[:]:
-				self._logger.debug('Scheduling signal callback {}'.format(handle))
-				self._signal_safe_callbacks.remove(handle)
-				self._add_callback(handle)
-
 
 baseclass = _SelectorEventLoop

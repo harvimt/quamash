@@ -386,23 +386,23 @@ class QEventLoop(_baseclass):
 			notifier.setEnabled(False)
 
 	def __on_notifier_ready(self, notifier, fd, callback, args):
-		# It can be necessary to disable QSocketNotifier when e.g. checking
-		# ZeroMQ sockets for events
 		if fd not in self._read_notifiers and fd not in self._write_notifiers:
 			self._logger.warning(
-				'Socket notifier for fd {} is ready, even though it should be disabled, not calling {}'
+				'Socket notifier for fd {} is ready, even though it should be disabled, not calling {} and disabling'
 				.format(fd, callback)
 			)
+			notifier.setEnabled(False)
 			return
 
-		enabled = notifier.isEnabled()
-		assert enabled
+		# It can be necessary to disable QSocketNotifier when e.g. checking
+		# ZeroMQ sockets for events
+		assert notifier.isEnabled()
 		self._logger.debug('Socket notifier for fd {} is ready'.format(fd))
 		notifier.setEnabled(False)
 		try:
 			callback(*args)
 		finally:
-			notifier.setEnabled(enabled)
+			notifier.setEnabled(True)
 
 	# Methods for interacting with threads.
 
