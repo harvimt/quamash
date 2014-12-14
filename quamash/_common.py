@@ -1,6 +1,7 @@
 # © 2014 Mark Harviston <mark.harviston@gmail.com>
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
+""" Mostly irrelevant, but useful utilities common to UNIX and Windows. """
 import logging
 
 

@@ -1,7 +1,11 @@
 # © 2014 Mark Harviston <mark.harviston@gmail.com>
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
+
+"""Windows specific Quamash functionality."""
+
 import asyncio
+
 try:
 	import _winapi
 	from asyncio import windows_events
@@ -16,7 +20,9 @@ from ._common import with_logger
 
 
 class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
+
 	"""Proactor based event loop."""
+
 	def __init__(self):
 		QtCore.QObject.__init__(self)
 		asyncio.ProactorEventLoop.__init__(self, _IocpProactor())
@@ -140,7 +146,9 @@ class _EventWorker(QtCore.QThread):
 
 @with_logger
 class _EventPoller(QtCore.QObject):
+
 	"""Polling of events in separate thread."""
+
 	sig_events = QtCore.Signal(list)
 
 	def start(self, proactor):

@@ -1,9 +1,8 @@
 # © 2014 Mark Harviston <mark.harviston@gmail.com>
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
-"""
-Implementation of the PEP 3156 Event-Loop with Qt
-"""
+""" Implementation of the PEP 3156 Event-Loop with Qt. """
+
 __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>'
 __version__ = '0.3'
 __license__ = 'BSD'
@@ -56,11 +55,13 @@ from ._common import with_logger
 
 @with_logger
 class _QThreadWorker(QtCore.QThread):
+
 	"""
 	Read from the queue.
 
 	For use by the QThreadExecutor
 	"""
+
 	def __init__(self, queue, num):
 		self.__queue = queue
 		self.__stop = False
@@ -102,8 +103,10 @@ class _QThreadWorker(QtCore.QThread):
 
 @with_logger
 class QThreadExecutor(QtCore.QObject):
+
 	"""
-	ThreadExecutor that produces QThreads
+	ThreadExecutor that produces QThreads.
+
 	Same API as `concurrent.futures.Executor`
 
 	>>> from quamash import QThreadExecutor
@@ -112,6 +115,7 @@ class QThreadExecutor(QtCore.QObject):
 	...     r = f.result()
 	...     assert r == 4
 	"""
+
 	def __init__(self, max_workers=10, parent=None):
 		super().__init__(parent)
 		self.__max_workers = max_workers
@@ -160,10 +164,11 @@ class QThreadExecutor(QtCore.QObject):
 
 def _easycallback(fn):
 	"""
-	Decorator that wraps a callback in a signal, and packs & unpacks arguments,
-	Makes the wrapped function effectively threadsafe. If you call the function
-	from one thread, it will be executed in the thread the QObject has affinity
-	with.
+	Decorator that wraps a callback in a signal.
+
+	It also packs & unpacks arguments, and makes the wrapped function effectively
+	threadsafe. If you call the function from one thread, it will be executed in
+	the thread the QObject has affinity with.
 
 	Remember: only objects that inherit from QObject can support signals/slots
 
@@ -219,8 +224,9 @@ else:
 
 @with_logger
 class QEventLoop(_baseclass):
+
 	"""
-	Implementation of asyncio event loop that uses the Qt Event loop
+	Implementation of asyncio event loop that uses the Qt Event loop.
 
 	>>> import quamash, asyncio
 	>>> from quamash import QtCore, QtGui, QApplication
@@ -235,6 +241,7 @@ class QEventLoop(_baseclass):
 	>>> with QEventLoop(app) as loop:
 	...     loop.run_until_complete(xplusy(2, 2))
 	"""
+
 	def __init__(self, app=None):
 		self.__timers = []
 		self.__app = app or QApplication.instance()
@@ -290,11 +297,15 @@ class QEventLoop(_baseclass):
 		self._logger.debug('Stopped event loop')
 
 	def is_running(self):
-		"""Is event loop running?"""
+		"""Return True if the event loop is running, False otherwise."""
 		return self.__is_running
 
 	def close(self):
-		"""Close event loop."""
+		"""
+		Release all resources used by the event loop.
+
+		The loop cannot be restarted after it has been closed.
+		"""
 		self._logger.debug('Closing event loop...')
 		if self.__default_executor is not None:
 			self.__default_executor.shutdown()
@@ -335,6 +346,7 @@ class QEventLoop(_baseclass):
 		return _Cancellable(timer, self)
 
 	def call_soon(self, callback, *args):
+		"""Register a callback to be run on the next iteration of the event loop."""
 		return self.call_later(0, callback, *args)
 
 	def call_at(self, when, callback, *args):

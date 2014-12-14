@@ -73,7 +73,7 @@ def executor(request):
 
 @pytest.fixture
 def TestException():
-	class TestException(Exception): pass
+	class TestException(Exception): pass  # pep8ignore
 	return TestException
 
 class TestCanRunTasksInExecutor:
@@ -105,7 +105,7 @@ class TestCanRunTasksInExecutor:
 				loop.run_in_executor(executor, self.blocking_failure, TestException),
 				timeout=3.0,
 			))
-		
+
 		assert str(excinfo.value) == 'Testing'
 
 	def blocking_failure(self, TestException):
@@ -162,23 +162,20 @@ def test_can_read_subprocess(loop):
 	import subprocess
 	@asyncio.coroutine
 	def mycoro():
-		#nonlocal process, received_stdout
 		process = yield from asyncio.create_subprocess_exec(
 			sys.executable or 'python', '-c', 'print("Hello async world!")', stdout=subprocess.PIPE)
 		received_stdout = yield from process.stdout.readexactly(len(b'Hello async world!\n'))
-		#received_stdout, received_stderr = yield from process.communicate()
-		#received_stdout = yield from process.stdout.readline()
 		yield from process.wait()
 		assert process.returncode == 0
 		assert received_stdout == b'Hello async world!\n'
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
+
 
 def test_can_communicate_subprocess(loop):
 	"""Verify that a subprocess's data can be passed in/out via stdin/stdout."""
 	import subprocess
 	@asyncio.coroutine
 	def mycoro():
-		#nonlocal process, received_stdout
 		process = yield from asyncio.create_subprocess_exec(
 			sys.executable or 'python', '-c', 'print(input())', stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 		received_stdout, received_stderr = yield from process.communicate(b'Hello async world!\n')
