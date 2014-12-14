@@ -20,9 +20,13 @@ logger = logging.getLogger('quamash')
 
 try:
 	QtModuleName = os.environ['QUAMASH_QTIMPL']
-	logger.info('Forcing use of %s as Qt Implementation', QtModuleName)
-	QtModule = __import__(QtModuleName)
 except KeyError:
+	QtModule = None
+else:
+	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
+	QtModule = __import__(QtModuleName)
+
+if not QtModule:
 	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
 		try:
 			QtModule = __import__(QtModuleName)
@@ -33,7 +37,7 @@ except KeyError:
 	else:
 		raise ImportError('No Qt implementations found')
 
-logger.info('Using Qt Implementation: %s', QtModuleName)
+logger.info('Using Qt Implementation: {}'.format(QtModuleName))
 
 QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
 QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
