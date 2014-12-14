@@ -124,15 +124,68 @@ class TestCanRunTasksInExecutor:
 		logging.debug('start blocking task()')
 
 
+def test_can_execute_subprocess_primitive(loop):
+	"""Verify that a subprocess can be executed using low-level api."""
+	transport, protocol = loop.run_until_complete(
+		loop.subprocess_exec(
+			_SubprocessProtocol, sys.executable or 'python', '-c', 'import sys; sys.exit(5)',
+		),
+	)
+	loop.run_forever()
+	assert transport.get_returncode() == 5
 
 
 def test_can_execute_subprocess(loop):
 	"""Verify that a subprocess can be executed."""
-	transport, protocol = loop.run_until_complete(loop.subprocess_exec(
-		_SubprocessProtocol, sys.executable or 'python', '-c', 'print(\'Hello async world!\')'))
+	@asyncio.coroutine
+	def mycoro():
+		process = yield from asyncio.create_subprocess_exec(
+			sys.executable or 'python', '-c', 'import sys; sys.exit(5)')
+		yield from process.wait()
+		assert process.returncode == 5
+	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
+
+
+def test_can_read_subprocess_primitive(loop):
+	transport, protocol = loop.run_until_complete(
+		loop.subprocess_exec(
+			_SubprocessProtocol, sys.executable or 'python', '-c', 'print("Hello async world!")',
+		),
+	)
 	loop.run_forever()
 	assert transport.get_returncode() == 0
-	assert protocol.received_stdout == 'Hello async world!'
+	assert protocol.received_stdout == "Hello async world!"
+
+
+def test_can_read_subprocess(loop):
+	"""Verify that a subprocess's data can be read from stdout."""
+	import subprocess
+	@asyncio.coroutine
+	def mycoro():
+		#nonlocal process, received_stdout
+		process = yield from asyncio.create_subprocess_exec(
+			sys.executable or 'python', '-c', 'print("Hello async world!")', stdout=subprocess.PIPE)
+		received_stdout = yield from process.stdout.readexactly(len(b'Hello async world!\n'))
+		#received_stdout, received_stderr = yield from process.communicate()
+		#received_stdout = yield from process.stdout.readline()
+		yield from process.wait()
+		assert process.returncode == 0
+		assert received_stdout == b'Hello async world!\n'
+	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
+
+def test_can_communicate_subprocess(loop):
+	"""Verify that a subprocess's data can be passed in/out via stdin/stdout."""
+	import subprocess
+	@asyncio.coroutine
+	def mycoro():
+		#nonlocal process, received_stdout
+		process = yield from asyncio.create_subprocess_exec(
+			sys.executable or 'python', '-c', 'print(input())', stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+		received_stdout, received_stderr = yield from process.communicate(b'Hello async world!\n')
+		yield from process.wait()
+		assert process.returncode == 0
+		assert received_stdout == b'Hello async world!\n'
+	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
 
 
 def test_can_terminate_subprocess(loop):
