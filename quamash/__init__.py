@@ -177,10 +177,9 @@ def _easycallback(fn):
 	>>> import asyncio
 	>>>
 	>>> import quamash
-	>>> from quamash import QEventLoop, QtCore, QtGui, QApplication
 	>>> QThread, QObject = quamash.QtCore.QThread, quamash.QtCore.QObject
 	>>>
-	>>> app = QApplication.instance() or QApplication([])
+	>>> app = getfixture('app')
 	>>>
 	>>> global_thread = QThread.currentThread()
 	>>> class MyObject(QObject):
@@ -231,9 +230,9 @@ class QEventLoop(_baseclass):
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
 
-	>>> import quamash, asyncio
-	>>> from quamash import QtCore, QtGui, QApplication
-	>>> app = QApplication.instance() or QApplication([])
+	>>> import asyncio
+	>>>
+	>>> app = getfixture('app')
 	>>>
 	>>> @asyncio.coroutine
 	... def xplusy(x, y):
