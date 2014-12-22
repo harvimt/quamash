@@ -454,3 +454,73 @@ def test_add_writer_should_disable_qsocket_notifier_on_callback(loop, sock_pair)
 	loop.add_writer(client_sock.fileno(), can_write)
 	notifier = loop._write_notifiers[client_sock.fileno()]
 	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
+
+def test_reader_writer_echo(loop, sock_pair):
+	"""Verify readers and writers can send data to each other."""
+	c_sock, s_sock = sock_pair
+
+	@asyncio.coroutine
+	def mycoro():
+		c_reader, c_writer = yield from asyncio.open_connection(sock=c_sock)
+		s_reader, s_writer = yield from asyncio.open_connection(sock=s_sock)
+
+		data = b'Echo... Echo... Echo...'
+		s_writer.write(data)
+		yield from s_writer.drain()
+		read_data = yield from c_reader.readexactly(len(data))
+		assert data == read_data
+		s_writer.close()
+
+	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=1.0))
+
+
+def test_regression_bug13(loop, sock_pair):
+	"""Verifies that a simple handshake between client and server works as expected."""
+	c_sock, s_sock = sock_pair
+	client_done, server_done = asyncio.Future(), asyncio.Future()
+
+	@asyncio.coroutine
+	def server_coro():
+		s_reader, s_writer = yield from asyncio.open_connection(sock=s_sock)
+
+		s_writer.write(b'1')
+		yield from s_writer.drain()
+		assert (yield from s_reader.readexactly(1)) == b'2'
+		s_writer.write(b'3')
+		yield from s_writer.drain()
+		server_done.set_result(True)
+
+	result1 = None
+	result3 = None
+
+	@asyncio.coroutine
+	def client_coro():
+		def cb1():
+			nonlocal result1
+			assert result1 is None
+			loop.remove_reader(c_sock.fileno())
+			result1 = c_sock.recv(1)
+			loop.add_writer(c_sock.fileno(), cb2)
+
+		def cb2():
+			nonlocal result3
+			assert result3 is None
+			c_sock.send(b'2')
+			loop.remove_writer(c_sock.fileno())
+			loop.add_reader(c_sock.fileno(), cb3)
+
+		def cb3():
+			nonlocal result3
+			assert result3 is None
+			result3 = c_sock.recv(1)
+			client_done.set_result(True)
+
+		loop.add_reader(c_sock.fileno(), cb1)
+
+	asyncio.async(client_coro())
+	asyncio.async(server_coro())
+
+	both_done = asyncio.gather(client_done, server_done)
+	loop.run_until_complete(asyncio.wait_for(both_done, timeout=1.0))
+	assert result1 == b'1'
+	assert result3 == b'3'
