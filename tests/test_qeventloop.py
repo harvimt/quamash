@@ -70,11 +70,7 @@ def executor(request):
 	request.addfinalizer(exc.shutdown)
 	return exc
 
-
-@pytest.fixture
-def TestException():
-	class TestException(Exception): pass  # pep8ignore
-	return TestException
+class TestException(Exception): pass
 
 class TestCanRunTasksInExecutor:
 	"""
@@ -96,20 +92,21 @@ class TestCanRunTasksInExecutor:
 
 		assert was_invoked.value == 1
 
-	def test_can_handle_exception_in_executor(self, TestException, loop, executor):
-		if isinstance(executor, ProcessPoolExecutor):
-			pytest.xfail("can't catch ProcessPoolExecutor exceptions (yet)")
-
+	def test_can_handle_exception_in_executor(self, loop, executor):
 		with pytest.raises(TestException) as excinfo:
 			loop.run_until_complete(asyncio.wait_for(
-				loop.run_in_executor(executor, self.blocking_failure, TestException),
+				loop.run_in_executor(executor, self.blocking_failure),
 				timeout=3.0,
 			))
 
 		assert str(excinfo.value) == 'Testing'
 
-	def blocking_failure(self, TestException):
-		raise TestException('Testing')
+	def blocking_failure(self):
+		logging.debug('raising')
+		try:
+			raise TestException('Testing')
+		finally:
+			logging.debug('raised!')
 
 	def blocking_func(self, was_invoked):
 		logging.debug('start blocking_func()')
