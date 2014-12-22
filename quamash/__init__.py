@@ -363,8 +363,8 @@ class QEventLoop(_baseclass):
 		notifier.setEnabled(True)
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
-			lambda: self.__on_notifier_ready(self._read_notifiers,
-							 notifier, fd, callback, args)
+			lambda: self.__on_notifier_ready(
+				self._read_notifiers, notifier, fd, callback, args)
 		)
 		self._read_notifiers[fd] = notifier
 
@@ -386,8 +386,8 @@ class QEventLoop(_baseclass):
 		notifier.setEnabled(True)
 		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
-			lambda: self.__on_notifier_ready(self._write_notifiers,
-							 notifier, fd, callback, args)
+			lambda: self.__on_notifier_ready(
+				self._write_notifiers, notifier, fd, callback, args)
 		)
 		self._write_notifiers[fd] = notifier
 
