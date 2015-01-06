@@ -167,7 +167,7 @@ def test_can_read_subprocess(loop):
 		received_stdout = yield from process.stdout.readexactly(len(b'Hello async world!\n'))
 		yield from process.wait()
 		assert process.returncode == 0
-		assert received_stdout == b'Hello async world!\n'
+		assert received_stdout.strip() == b'Hello async world!'
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
 
 
@@ -181,7 +181,7 @@ def test_can_communicate_subprocess(loop):
 		received_stdout, received_stderr = yield from process.communicate(b'Hello async world!\n')
 		yield from process.wait()
 		assert process.returncode == 0
-		assert received_stdout == b'Hello async world!\n'
+		assert received_stdout.strip() == b'Hello async world!'
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
 
 
