@@ -69,7 +69,9 @@ def executor(request):
 	request.addfinalizer(exc.shutdown)
 	return exc
 
-class TestException(Exception): pass
+
+TestException = type('TestException', (Exception,), {})  # to make flake8 not complain
+
 
 class TestCanRunTasksInExecutor:
 	"""
