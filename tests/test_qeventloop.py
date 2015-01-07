@@ -14,7 +14,6 @@ import quamash
 
 import pytest
 
-
 class _SubprocessProtocol(asyncio.SubprocessProtocol):
 	def __init__(self, *args, **kwds):
 		super(_SubprocessProtocol, self).__init__(*args, **kwds)
@@ -223,7 +222,7 @@ def test_can_function_as_context_manager(application):
 
 def test_future_not_done_on_loop_shutdown(loop):
 	"""Verify RuntimError occurs when loop stopped before Future completed with run_until_complete."""
-	loop.call_later(1, loop.stop)
+	loop.call_later(.1, loop.stop)
 	fut = asyncio.Future()
 	with pytest.raises(RuntimeError):
 		loop.run_until_complete(fut)
@@ -251,8 +250,8 @@ def test_call_at(loop):
 		was_invoked = True
 	was_invoked = False
 
-	loop.call_at(loop.time() + .1, mycallback)
-	loop.run_until_complete(asyncio.sleep(.5))
+	loop.call_at(loop.time() + .05, mycallback)
+	loop.run_until_complete(asyncio.sleep(.1))
 
 	assert was_invoked
 
