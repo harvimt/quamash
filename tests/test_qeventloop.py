@@ -9,10 +9,12 @@ import ctypes
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
+import subprocess
 
 import quamash
 
 import pytest
+
 
 class _SubprocessProtocol(asyncio.SubprocessProtocol):
 	def __init__(self, *args, **kwds):
@@ -74,7 +76,10 @@ TestException = type('TestException', (Exception,), {})  # to make flake8 not co
 
 
 class TestCanRunTasksInExecutor:
+
 	"""
+	Test Cases Concerning running jobs in Executors.
+
 	This needs to be a class because pickle can't serialize closures,
 	but can serialize bound methods.
 	multiprocessing can only handle pickleable functions.
@@ -157,7 +162,6 @@ def test_can_read_subprocess_primitive(loop):
 
 def test_can_read_subprocess(loop):
 	"""Verify that a subprocess's data can be read from stdout."""
-	import subprocess
 	@asyncio.coroutine
 	def mycoro():
 		process = yield from asyncio.create_subprocess_exec(
@@ -166,12 +170,12 @@ def test_can_read_subprocess(loop):
 		yield from process.wait()
 		assert process.returncode == 0
 		assert received_stdout.strip() == b'Hello async world!'
+
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
 
 
 def test_can_communicate_subprocess(loop):
 	"""Verify that a subprocess's data can be passed in/out via stdin/stdout."""
-	import subprocess
 	@asyncio.coroutine
 	def mycoro():
 		process = yield from asyncio.create_subprocess_exec(
@@ -200,7 +204,7 @@ def test_can_terminate_subprocess(loop):
 
 
 def test_loop_running(loop):
-	"""Verify that loop.is_running returns True when running"""
+	"""Verify that loop.is_running returns True when running."""
 	@asyncio.coroutine
 	def is_running():
 		nonlocal loop
@@ -210,7 +214,7 @@ def test_loop_running(loop):
 
 
 def test_loop_not_running(loop):
-	"""Verify that loop.is_running returns False when not running"""
+	"""Verify that loop.is_running returns False when not running."""
 	assert not loop.is_running()
 
 
@@ -453,6 +457,7 @@ def test_add_writer_should_disable_qsocket_notifier_on_callback(loop, sock_pair)
 	notifier = loop._write_notifiers[client_sock.fileno()]
 	loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
 
+
 def test_reader_writer_echo(loop, sock_pair):
 	"""Verify readers and writers can send data to each other."""
 	c_sock, s_sock = sock_pair
@@ -473,7 +478,7 @@ def test_reader_writer_echo(loop, sock_pair):
 
 
 def test_regression_bug13(loop, sock_pair):
-	"""Verifies that a simple handshake between client and server works as expected."""
+	"""Verify that a simple handshake between client and server works as expected."""
 	c_sock, s_sock = sock_pair
 	client_done, server_done = asyncio.Future(), asyncio.Future()
 
