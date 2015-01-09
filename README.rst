@@ -5,8 +5,29 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>
 
+.. image:: https://pypip.in/version/quamash/badge.svg
+    :target: https://pypi.python.org/pypi/quamash/
+    :alt: Latest Version
+
+.. image:: https://pypip.in/download/quamash/badge.svg
+    :target: https://pypi.python.org/pypi//quamash/
+    :alt: Downloads
+
+.. image:: https://pypip.in/py_versions/quamash/badge.svg
+    :target: https://pypi.python.org/pypi/quamash/
+    :alt: Supported Python versions
+
+.. image:: https://pypip.in/license/quamash/badge.svg
+    :target: https://pypi.python.org/pypi/quamash/
+    :alt: License
+
+.. image:: https://pypip.in/status/quamash/badge.svg
+    :target: https://pypi.python.org/pypi/quamash/
+    :alt: Development Status
+
 .. image:: https://travis-ci.org/harvimt/quamash.png?branch=master
     :target: https://travis-ci.org/harvimt/quamash
+    :alt: Build Status
 
 Requirements
 ============
@@ -55,6 +76,30 @@ Usage
 
     with loop:
         loop.run_until_complete(master())
+
+Changelog
+=========
+
+Version 0.4
+-----------
+* Major improvements to tests
+    - integration with Travis CI
+    - more tests
+    - all tests pass
+    - cross platform/configuration tests
+* Bug #13 discovered and fixed
+* Force which Qt Implementation to use with ``QUQMASH_QTIMPL`` environment variable.
+* Implement ``QEventLoop.remove_reader`` and ``QEventLoop.remove_writer``
+* PyQt4 Support
+* PyQt5 Support
+* Support ``multiprocessing`` executors (``ProcessPoolExecutor``))
+* Improvements to code quality
+* Improvements to PEP-3156 Conformance
+
+Version 0.3
+-----------
+First version worth using.
+
 
 Testing
 =======
