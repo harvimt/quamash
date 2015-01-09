@@ -368,9 +368,6 @@ class QEventLoop(_baseclass):
 			existing.setEnabled(False)
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
-			self._logger.warning(
-				'There is already a reader attached for fd {}'.format(fd)
-			)
 
 		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
 		notifier.setEnabled(True)
@@ -387,9 +384,6 @@ class QEventLoop(_baseclass):
 		try:
 			notifier = self._read_notifiers.pop(fd)
 		except KeyError:
-			self._logger.warning(
-				'Attempt to remove non-existent reader callback for file descriptor {}'.format(fd)
-			)
 			return False
 		else:
 			notifier.setEnabled(False)
@@ -406,9 +400,6 @@ class QEventLoop(_baseclass):
 			existing.setEnabled(False)
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
-			self._logger.warning(
-				'There is already a writer attached for fd {}'.format(fd)
-			)
 
 		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Write)
 		notifier.setEnabled(True)
@@ -425,9 +416,6 @@ class QEventLoop(_baseclass):
 		try:
 			notifier = self._write_notifiers.pop(fd)
 		except KeyError:
-			self._logger.warning(
-				'Attempt to remove non-existent writer callback for file descriptor {}'.format(fd)
-			)
 			return False
 		else:
 			notifier.setEnabled(False)
