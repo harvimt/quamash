@@ -365,7 +365,7 @@ class QEventLoop(_baseclass):
 		except KeyError:
 			pass
 		else:
-			# this is neccessary to avoid race condition-like issues
+			# this is necessary to avoid race condition-like issues
 			existing.setEnabled(False)
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
@@ -401,7 +401,7 @@ class QEventLoop(_baseclass):
 		except KeyError:
 			pass
 		else:
-			# this is neccessary to avoid race condition-like issues
+			# this is necessary to avoid race condition-like issues
 			existing.setEnabled(False)
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
