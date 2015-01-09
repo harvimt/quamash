@@ -610,12 +610,7 @@ def test_add_writer_replace(loop, sock_pair):
 		yield from callback_invoked
 		loop.remove_writer(c_sock.fileno())
 
-	client_done = asyncio.async(client_coro())
-
-	both_done = asyncio.wait(
-		[client_done],
-		return_when=asyncio.FIRST_EXCEPTION)
-	loop.run_until_complete(asyncio.wait_for(both_done, timeout=0.1))
+	loop.run_until_complete(asyncio.wait_for(client_coro(), timeout=0.1))
 	assert not called1
 	assert called2
 

@@ -4,7 +4,7 @@
 """ Implementation of the PEP 3156 Event-Loop with Qt. """
 
 __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>'
-__version__ = '0.4'
+__version__ = '0.4.1'
 __url__ = 'https://github.com/harvimt/quamash'
 __license__ = 'BSD'
 

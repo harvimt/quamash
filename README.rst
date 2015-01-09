@@ -80,6 +80,12 @@ Usage
 Changelog
 =========
 
+Version 0.4.1
+-------------
+
+* Improvements to PEP-3156 Conformance
+* Minor Test Improvements
+
 Version 0.4
 -----------
 * Major improvements to tests
@@ -94,7 +100,6 @@ Version 0.4
 * PyQt5 Support
 * Support ``multiprocessing`` executors (``ProcessPoolExecutor``))
 * Improvements to code quality
-* Improvements to PEP-3156 Conformance
 
 Version 0.3
 -----------
