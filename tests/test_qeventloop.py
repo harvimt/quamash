@@ -618,3 +618,35 @@ def test_add_writer_replace(loop, sock_pair):
 	loop.run_until_complete(asyncio.wait_for(both_done, timeout=0.1))
 	assert not called1
 	assert called2
+
+
+def test_remove_reader_idempotence(loop, sock_pair):
+	fd = sock_pair[0].fileno()
+
+	def cb():
+		pass
+
+	removed0 = loop.remove_reader(fd)
+	loop.add_reader(fd, cb)
+	removed1 = loop.remove_reader(fd)
+	removed2 = loop.remove_reader(fd)
+
+	assert not removed0
+	assert removed1
+	assert not removed2
+
+
+def test_remove_writer_idempotence(loop, sock_pair):
+	fd = sock_pair[0].fileno()
+
+	def cb():
+		pass
+
+	removed0 = loop.remove_writer(fd)
+	loop.add_writer(fd, cb)
+	removed1 = loop.remove_writer(fd)
+	removed2 = loop.remove_writer(fd)
+
+	assert not removed0
+	assert removed1
+	assert not removed2
