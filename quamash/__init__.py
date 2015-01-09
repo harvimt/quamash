@@ -390,8 +390,10 @@ class QEventLoop(_baseclass):
 			self._logger.warning(
 				'Attempt to remove non-existent reader callback for file descriptor {}'.format(fd)
 			)
+			return False
 		else:
 			notifier.setEnabled(False)
+			return True
 
 	def add_writer(self, fd, callback, *args):
 		"""Register a callback for when a file descriptor is ready for writing."""
@@ -426,8 +428,10 @@ class QEventLoop(_baseclass):
 			self._logger.warning(
 				'Attempt to remove non-existent writer callback for file descriptor {}'.format(fd)
 			)
+			return False
 		else:
 			notifier.setEnabled(False)
+			return True
 
 	def __on_notifier_ready(self, notifiers, notifier, fd, callback, args):
 		if fd not in notifiers:
