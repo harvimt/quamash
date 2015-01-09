@@ -523,7 +523,6 @@ def test_regression_bug13(loop, sock_pair):
 	assert result3 == b'3'
 
 
-
 def test_add_reader_replace(loop, sock_pair):
 	c_sock, s_sock = sock_pair
 	callback_invoked = asyncio.Future()
@@ -566,8 +565,9 @@ def test_add_reader_replace(loop, sock_pair):
 	client_done = asyncio.async(client_coro())
 	server_done = asyncio.async(server_coro())
 
-	both_done = asyncio.wait([server_done, client_done],
-				 return_when=asyncio.FIRST_EXCEPTION)
+	both_done = asyncio.wait(
+		[server_done, client_done],
+		return_when=asyncio.FIRST_EXCEPTION)
 	loop.run_until_complete(asyncio.wait_for(both_done, timeout=0.1))
 	assert not called1
 	assert called2
@@ -606,8 +606,9 @@ def test_add_writer_replace(loop, sock_pair):
 
 	client_done = asyncio.async(client_coro())
 
-	both_done = asyncio.wait([client_done],
-				 return_when=asyncio.FIRST_EXCEPTION)
+	both_done = asyncio.wait(
+		[client_done],
+		return_when=asyncio.FIRST_EXCEPTION)
 	loop.run_until_complete(asyncio.wait_for(both_done, timeout=0.1))
 	assert not called1
 	assert called2
