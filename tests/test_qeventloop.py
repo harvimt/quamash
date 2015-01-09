@@ -527,3 +527,94 @@ def test_regression_bug13(loop, sock_pair):
 	loop.run_until_complete(asyncio.wait_for(both_done, timeout=1.0))
 	assert result1 == b'1'
 	assert result3 == b'3'
+
+
+def test_add_reader_replace(loop, sock_pair):
+	c_sock, s_sock = sock_pair
+	callback_invoked = asyncio.Future()
+
+	called1 = False
+	called2 = False
+
+	def any_callback():
+		if not callback_invoked.done():
+			callback_invoked.set_result(True)
+		loop.remove_reader(c_sock.fileno())
+
+	def callback1():
+		# the "bad" callback: if this gets invoked, something went wrong
+		nonlocal called1
+		called1 = True
+		any_callback()
+
+	def callback2():
+		# the "good" callback: this is the one which should get called
+		nonlocal called2
+		called2 = True
+		any_callback()
+
+	@asyncio.coroutine
+	def server_coro():
+		s_reader, s_writer = yield from asyncio.open_connection(
+			sock=s_sock)
+		s_writer.write(b"foo")
+		yield from s_writer.drain()
+
+	@asyncio.coroutine
+	def client_coro():
+		loop.add_reader(c_sock.fileno(), callback1)
+		loop.add_reader(c_sock.fileno(), callback2)
+		yield from callback_invoked
+		loop.remove_reader(c_sock.fileno())
+		assert (yield from loop.sock_recv(c_sock, 3)) == b"foo"
+
+	client_done = asyncio.async(client_coro())
+	server_done = asyncio.async(server_coro())
+
+	both_done = asyncio.wait(
+		[server_done, client_done],
+		return_when=asyncio.FIRST_EXCEPTION)
+	loop.run_until_complete(asyncio.wait_for(both_done, timeout=0.1))
+	assert not called1
+	assert called2
+
+
+def test_add_writer_replace(loop, sock_pair):
+	c_sock, s_sock = sock_pair
+	callback_invoked = asyncio.Future()
+
+	called1 = False
+	called2 = False
+
+	def any_callback():
+		if not callback_invoked.done():
+			callback_invoked.set_result(True)
+		loop.remove_writer(c_sock.fileno())
+
+	def callback1():
+		# the "bad" callback: if this gets invoked, something went wrong
+		nonlocal called1
+		called1 = True
+		any_callback()
+
+	def callback2():
+		# the "good" callback: this is the one which should get called
+		nonlocal called2
+		called2 = True
+		any_callback()
+
+	@asyncio.coroutine
+	def client_coro():
+		loop.add_writer(c_sock.fileno(), callback1)
+		loop.add_writer(c_sock.fileno(), callback2)
+		yield from callback_invoked
+		loop.remove_writer(c_sock.fileno())
+
+	client_done = asyncio.async(client_coro())
+
+	both_done = asyncio.wait(
+		[client_done],
+		return_when=asyncio.FIRST_EXCEPTION)
+	loop.run_until_complete(asyncio.wait_for(both_done, timeout=0.1))
+	assert not called1
+	assert called2

@@ -360,6 +360,19 @@ class QEventLoop(_baseclass):
 
 	def add_reader(self, fd, callback, *args):
 		"""Register a callback for when a file descriptor is ready for reading."""
+		try:
+			existing = self._read_notifiers[fd]
+		except KeyError:
+			pass
+		else:
+			# this is neccessary to avoid race condition-like issues
+			existing.setEnabled(False)
+			existing.activated.disconnect()
+			# will get overwritten by the assignment below anyways
+			self._logger.warning(
+				'There is already a reader attached for fd {}'.format(fd)
+			)
+
 		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
@@ -383,6 +396,19 @@ class QEventLoop(_baseclass):
 
 	def add_writer(self, fd, callback, *args):
 		"""Register a callback for when a file descriptor is ready for writing."""
+		try:
+			existing = self._write_notifiers[fd]
+		except KeyError:
+			pass
+		else:
+			# this is neccessary to avoid race condition-like issues
+			existing.setEnabled(False)
+			existing.activated.disconnect()
+			# will get overwritten by the assignment below anyways
+			self._logger.warning(
+				'There is already a writer attached for fd {}'.format(fd)
+			)
+
 		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Write)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
