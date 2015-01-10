@@ -93,7 +93,7 @@ class _QThreadWorker(QtCore.QThread):
 					self._logger.debug('Setting Future result: {}'.format(r))
 					future.set_result(r)
 			else:
-				self._logger.debug('Future was cancelled')
+				self._logger.debug('Future was canceled')
 
 		self._logger.debug('Thread #{} stopped'.format(self.__num))
 
