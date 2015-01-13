@@ -3,14 +3,55 @@ python:
   - "3.3"
   - "3.4"
 before_install:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  #Cached Downloads
+  - sudo mkdir -p /downloads
+  - sudo chmod a+rw /downloads
+  - if [ ! -f /downloads/sip.tar.gz ]; then curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.5/sip-4.16.5.tar.gz; fi
+  - if [ ! -f /downloads/pyqt4.tar.gz]; curl -L -o /downloads/pyqt4.tar.gz http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.3/PyQt-x11-gpl-4.11.3.tar.gz; fi
+  - if [ ! -f /downloads/pyqt5.tar.gz]; then curl -L -o /downloads/pyqt5.tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4/PyQt-gpl-5.4.tar.gz; fi
+  - echo '6d01ea966a53e4c7ae5c5e48c40e49e5  /downloads/sip.tar.gz' | md5sum -c -
+  - echo '997c3e443165a89a559e0d96b061bf70  /downloads/pyqt4.tar.gz' | md5sum -c -
+  - echo '7f2eb79eaf3d7e5e7df5a4e9c8c9340e  /downloads/pyqt5.tar.gz' | md5sum -c -
 install:
   - sudo apt-get install -y libqt4-dev
+  # SIP
+  - tar xzf /downloads/sip.tar.gz
+  - cd sip-4.16.5
+  - python configure.py
+  - make
+  - sudo make install
+  - cd ..
+  # PyQt4
+  - tar xzf /downloads/pyqt4.tar.gz
+  - cd PyQt-x11-gpl-4.11.3
+  - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui
+  - make
+  - sudo make install
+  - cd ..
+  # Qt5
+  - sudo add-apt-repository -y ppa:beineri/opt-qt54
+  - sudo apt-get update
+  - sudo apt-get install -y qt54base
+  - source /opt/qt54/bin/qt54-env.sh
+  # PyQt5
+  - tar xzf /downloads/pyqt5.tar.gz
+  - cd PyQt-gpl-5.4
+  - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets
+  - make
+  - sudo make install
+  - cd ..
+  # PySide
   - pip install --find-links wheelhouse/ pyside
   - python `which pyside_postinstall.py` -install
+  # Python 3.3
   - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
-script: py.test
+script:
+  - QUAMASH_QTIMPL=PySide py.test
+  - QUAMASH_QTIMPL=PyQt4 py.test
+  - QUAMASH_QTIMPL=PyQt5 py.test
 cache:
   directories:
-    - /home/travis/virtualenv/python3.4.2/lib/python3.4/site-packages
+    - /downloads
+  apt: true
