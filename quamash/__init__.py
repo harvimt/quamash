@@ -313,10 +313,19 @@ class QEventLoop(_baseclass):
 
 		super().close()
 
-		self.__timers = []
+		for timer in self.__timers:
+			if timer.isActive():
+				timer.stop()
+			del timer
+		self.__timers = None
+
 		self.__app = None
-		self._read_notifiers = {}
-		self._write_notifiers = {}
+
+		for notifier in (*self._read_notifiers, *self._write_notifiers):
+			notifer.setEnabled(False)
+
+		self._read_notifiers = None
+		self._write_notifiers = None
 
 	def call_later(self, delay, callback, *args):
 		"""Register callback to be invoked after a certain delay."""
