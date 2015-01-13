@@ -138,7 +138,7 @@ Name
 Tulip related projects are being named after other flowers, Quamash is one of the few flowers that
 starts with a "Q".
 
-.. _`PEP 3156`: http://legacy.python.org/dev/peps/pep-3156/
+.. _`PEP 3156`: http://python.org/dev/peps/pep-3156/
 .. _`pytest`: http://pytest.org
 .. _`BSD License`: http://opensource.org/licenses/BSD-2-Clause
 .. _tox: https://tox.readthedocs.org/
