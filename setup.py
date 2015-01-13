@@ -1,14 +1,14 @@
 from setuptools import setup
 import quamash
 import re
-
-from pathlib import Path  # safe (for now) because python 3.4 is only target
+import os.path
 
 groups = re.findall(r'(.+?) <(.+?)>(?:,\s*)?', quamash.__author__)
 authors = [x[0].strip() for x in groups]
 emails = [x[1].strip() for x in groups]
 
-with (Path(__file__).parent / 'README.rst').open() as desc_file:
+desc_path = os.path.join(os.path.dirname(__file__), 'README.rst')
+with open(desc_path, encoding='utf8') as desc_file:
 	long_description = desc_file.read()
 
 setup(
@@ -29,6 +29,7 @@ setup(
 		'Operating System :: Microsoft :: Windows',
 		'Operating System :: MacOS :: MacOS X',
 		'Operating System :: POSIX',
+		'Programming Language :: Python :: 3.3',
 		'Programming Language :: Python :: 3.4',
 		'Programming Language :: Python :: 3 :: Only',
 		'Environment :: X11 Applications :: Qt',

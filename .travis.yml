@@ -1,14 +1,15 @@
 language: python
 python:
+  - "3.3"
   - "3.4"
 before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
 install:
-  - sudo apt-get install libqt4-dev
-  - pip install wheelhouse/PySide-1.2.2-cp34-cp34m-linux_x86_64.whl pytest
-   # Travis CI servers use virtualenvs, so we need to finish the install by the following
-  - python ~/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/pyside_postinstall.py -install
+  - sudo apt-get install -y libqt4-dev
+  - pip install --find-links wheelhouse/ pyside
+  - python `which pyside_postinstall.py` -install
+  - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
 script: py.test
 cache:
   directories:
