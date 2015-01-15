@@ -50,9 +50,10 @@ Usage
     from quamash import QEventLoop, QThreadExecutor
 
     app = QApplication(sys.argv)
-    progress = QProgressBar()
     loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)  # NEW must set the event loop
 
+    progress = QProgressBar()
     progress.setRange(0, 99)
     progress.show()
 
@@ -74,11 +75,15 @@ Usage
             loop.call_soon_threadsafe(progress.setValue, i)
             time.sleep(.1)
 
-    with loop:
+    with loop: ## context manager calls .close() when loop completes, and releases all resources
         loop.run_until_complete(master())
 
 Changelog
 =========
+
+Upcoming/Unreleased Changes
+---------------------------
+* deprecation of event loop as means to ``asyncio.set_event_loop``, now must be called explicitly.
 
 Version 0.4.1
 -------------

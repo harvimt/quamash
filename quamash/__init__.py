@@ -549,15 +549,11 @@ class QEventLoop(_baseclass):
 		self.__debug_enabled = enabled
 
 	def __enter__(self):
-		asyncio.set_event_loop(self)
 		return self
 
 	def __exit__(self, *args):
-		try:
-			self.stop()
-			self.close()
-		finally:
-			asyncio.set_event_loop(None)
+		self.stop()
+		self.close()
 
 	@classmethod
 	def __log_error(cls, *args, **kwds):
