@@ -645,3 +645,25 @@ def test_remove_writer_idempotence(loop, sock_pair):
 	assert not removed0
 	assert removed1
 	assert not removed2
+
+
+def test_scheduling(loop, sock_pair):
+	s1, s2 = sock_pair
+	fd = s1.fileno()
+	cb_called = asyncio.Future()
+
+	def writer_cb(fut):
+		if fut.done():
+			cb_called.set_exception(
+				ValueError("writer_cb called twice")
+			)
+		fut.set_result(None)
+
+	def fut_cb(fut):
+		loop.remove_writer(fd)
+		cb_called.set_result(None)
+
+	fut = asyncio.Future()
+	fut.add_done_callback(fut_cb)
+	loop.add_writer(fd, writer_cb, fut)
+	loop.run_until_complete(cb_called)
