@@ -422,6 +422,22 @@ class QEventLoop(_baseclass):
 			notifier.setEnabled(False)
 			return True
 
+	def __notifier_cb_wrapper(self, notifiers, notifier, fd, callback, args):
+		# This wrapper gets called with a certain delay. We cannot know
+		# for sure that the notifier is still the current notifier for
+		# the fd.
+		if notifiers.get(fd, None) is not notifier:
+			return
+		try:
+			callback(*args)
+		finally:
+			# The notifier might have been overriden by the
+			# callback. We must not re-enable it in that case.
+			if notifiers.get(fd, None) is notifier:
+				notifier.setEnabled(True)
+			else:
+				notifier.activated.disconnect()
+
 	def __on_notifier_ready(self, notifiers, notifier, fd, callback, args):
 		if fd not in notifiers:
 			self._logger.warning(
@@ -436,11 +452,9 @@ class QEventLoop(_baseclass):
 		assert notifier.isEnabled()
 		self._logger.debug('Socket notifier for fd {} is ready'.format(fd))
 		notifier.setEnabled(False)
-		try:
-			callback(*args)
-		finally:
-			if fd in notifiers:
-				notifier.setEnabled(True)
+		self.call_soon(
+			self.__notifier_cb_wrapper,
+			notifiers, notifier, fd, callback, args)
 
 	# Methods for interacting with threads.
 
