@@ -13,6 +13,7 @@ import os
 import asyncio
 import time
 from functools import wraps
+import itertools
 from queue import Queue
 from concurrent.futures import Future
 import logging
@@ -200,6 +201,7 @@ def _easycallback(fn):
 	...     myobject.mycallback()
 	>>>
 	>>> loop = QEventLoop(app)
+	>>> asyncio.set_event_loop(loop)
 	>>> with loop:
 	...     loop.run_until_complete(mycoroutine())
 	"""
@@ -239,7 +241,9 @@ class QEventLoop(_baseclass):
 	...     assert x + y == 4
 	...     yield from asyncio.sleep(.1)
 	>>>
-	>>> with QEventLoop(app) as loop:
+	>>> loop = QEventLoop(app)
+	>>> asyncio.set_event_loop(loop)
+	>>> with loop:
 	...     loop.run_until_complete(xplusy(2, 2))
 	"""
 
@@ -321,8 +325,8 @@ class QEventLoop(_baseclass):
 
 		self.__app = None
 
-		for notifier in (*self._read_notifiers, *self._write_notifiers):
-			notifer.setEnabled(False)
+		for notifier in itertools.chain(self._read_notifiers.values(), self._write_notifiers.values()):
+			notifier.setEnabled(False)
 
 		self._read_notifiers = None
 		self._write_notifiers = None
