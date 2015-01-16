@@ -81,7 +81,7 @@ def executor(request):
 	return exc
 
 
-TestException = type('TestException', (Exception,), {})  # to make flake8 not complain
+ExceptionTester = type('ExceptionTester', (Exception,), {})  # to make flake8 not complain
 
 
 class TestCanRunTasksInExecutor:
@@ -108,7 +108,7 @@ class TestCanRunTasksInExecutor:
 		assert was_invoked.value == 1
 
 	def test_can_handle_exception_in_executor(self, loop, executor):
-		with pytest.raises(TestException) as excinfo:
+		with pytest.raises(ExceptionTester) as excinfo:
 			loop.run_until_complete(asyncio.wait_for(
 				loop.run_in_executor(executor, self.blocking_failure),
 				timeout=3.0,
@@ -119,7 +119,7 @@ class TestCanRunTasksInExecutor:
 	def blocking_failure(self):
 		logging.debug('raising')
 		try:
-			raise TestException('Testing')
+			raise ExceptionTester('Testing')
 		finally:
 			logging.debug('raised!')
 
@@ -212,11 +212,11 @@ def test_can_terminate_subprocess(loop):
 	assert transport.get_returncode() != 0
 
 
-@pytest.mark.raises(TestException)
+@pytest.mark.raises(ExceptionTester)
 def test_loop_callback_exceptions_bubble_up(loop):
 	"""Verify that test exceptions raised in event loop callbacks bubble up."""
 	def raise_test_exception():
-		raise TestException("Test Message")
+		raise ExceptionTester("Test Message")
 	loop.call_soon(raise_test_exception)
 	loop.run_until_complete(asyncio.sleep(.1))
 
