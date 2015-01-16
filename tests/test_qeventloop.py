@@ -40,6 +40,8 @@ def loop(request, application):
 	lp = quamash.QEventLoop(application)
 	asyncio.set_event_loop(lp)
 
+	additional_exceptions = []
+
 	def fin():
 		sys.excepthook = orig_excepthook
 
@@ -48,12 +50,19 @@ def loop(request, application):
 		finally:
 			asyncio.set_event_loop(None)
 
+		if additional_exceptions:
+			raise additional_exceptions[0]['exception']
+
+	def except_handler(loop, ctx):
+		additional_exceptions.append(ctx)
+
 	def excepthook(type, *args):
 		lp.stop()
 		orig_excepthook(type, *args)
 
 	orig_excepthook = sys.excepthook
 	sys.excepthook = excepthook
+	lp.set_exception_handler(except_handler)
 
 	request.addfinalizer(fin)
 	return lp
@@ -201,6 +210,15 @@ def test_can_terminate_subprocess(loop):
 	loop.run_forever()
 
 	assert transport.get_returncode() != 0
+
+
+@pytest.mark.raises(TestException)
+def test_loop_callback_exceptions_bubble_up(loop):
+	"""Verify that test exceptions raised in event loop callbacks bubble up."""
+	def raise_test_exception():
+		raise TestException("Test Message")
+	loop.call_soon(raise_test_exception)
+	loop.run_until_complete(asyncio.sleep(.1))
 
 
 def test_loop_running(loop):
