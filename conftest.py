@@ -13,6 +13,7 @@ else:
 
 _app = None
 
+
 @fixture
 def app():
 	from quamash import QApplication
