@@ -29,6 +29,10 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
     :target: https://travis-ci.org/harvimt/quamash
     :alt: Build Status
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+    :target: https://gitter.im/harvimt/quamash?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+    :alt: Gitter
+
 Requirements
 ============
 Quamash requires Python 3.4 and either PyQt4, PyQt5 or PySide.
