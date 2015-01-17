@@ -67,3 +67,10 @@ cache:
   directories:
     - /downloads
   apt: true
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/0ed6fa8828890c4a49ea
+    on_success: change
+    on_failure: always
+    on_start: false
