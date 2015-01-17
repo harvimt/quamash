@@ -15,7 +15,7 @@ _app = None
 
 @fixture
 def app():
-	from PyQt5.QtWidgets import QApplication
+	from quamash import QApplication
 	global _app
 	if _app is None:
 		_app = QApplication([])
