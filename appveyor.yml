@@ -31,3 +31,9 @@ build: off
 
 test_script:
   - "%PYTHON%\\Scripts\\py.test.exe"
+
+notifications:
+  - provider: Webhook
+    url: https://webhooks.gitter.im/e/9723bec82b34a9f3faf0
+    on_build_success: false
+    on_build_failure: True
