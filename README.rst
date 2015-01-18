@@ -131,8 +131,19 @@ For this reason it may be good to run tox tests while specificying which environ
 work well on Windows especially since PyQt5 and PyQt4 cannot coexist in the same python installation
 on Windows. Also the PyQt4 w/ Qt5 oddity appears to be mostly a windows only thing too.
 
-Style testing is also handled by tox. Run ``tox -e flake8``. Similarly run ``tox -e coverage`` to
-generate a coverage report.
+Style testing is also handled by tox. Run ``tox -e flake8``.
+
+Code Coverage
+-------------
+Getting a full coverage support is quite time consuming. In theory this could by done with `pytest-xdist`_,
+but I haven't had time to make that work. Install ``pytest-cov`` with ``pip install pytest-cov`` then
+run ``py.test --cov quamash`` then append a dot and an identifier the generated ``.coverage`` file. For example 
+``mv .coverage .coverage.nix.p33.pyside`` then repeat on all the platforms you want to run on. (at least linux
+and windows). Put all the ``.coverage.*`` files in one directory that also has quamash source code in it.
+``cd`` to that directory and run ``coverage combine`` finally run ``coverage html`` for html based reports
+or ``coverage report`` for a simple report. These last commands may fail with errors about not being able to
+find source code. Use the ``.coveragerc`` file to specify equivelant paths.  The default configuration has linux
+source code in ``/mnt/fuzzy/Development/quamash`` and windows source at ``C:\quamash``.
 
 Continuous Integration & Supported Platforms
 --------------------------------------------
