@@ -284,6 +284,7 @@ class QEventLoop(_baseclass):
 			self.run_forever()
 		finally:
 			future.remove_done_callback(stop)
+		self.__app.processEvents()  # run loop one last time to process all the events
 		if not future.done():
 			raise RuntimeError('Event loop stopped before Future completed.')
 
