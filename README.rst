@@ -39,7 +39,7 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 
 Requirements
 ============
-Quamash requires Python 3.4 and either PyQt4, PyQt5 or PySide.
+Quamash requires Python 3.4 or Python 3.3 with the backported ``asycnio`` library and either PyQt4, PyQt5 or PySide.
 
 Installation
 ============
