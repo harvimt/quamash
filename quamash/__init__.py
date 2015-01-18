@@ -142,7 +142,7 @@ class QThreadExecutor(QtCore.QObject):
 	def map(self, func, *iterables, timeout=None):
 		raise NotImplementedError("use as_completed on the event loop")
 
-	def shutdown(self):
+	def shutdown(self, wait=True):
 		if self.__been_shutdown:
 			raise RuntimeError("QThreadExecutor has been shutdown")
 
@@ -152,8 +152,9 @@ class QThreadExecutor(QtCore.QObject):
 		for i in range(len(self.__workers)):
 			# Signal workers to stop
 			self.__queue.put(None)
-		for w in self.__workers:
-			w.wait()
+		if wait:
+			for w in self.__workers:
+				w.wait()
 
 	def __enter__(self, *args):
 		if self.__been_shutdown:
