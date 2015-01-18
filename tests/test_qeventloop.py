@@ -30,11 +30,6 @@ class _SubprocessProtocol(asyncio.SubprocessProtocol):
 		asyncio.get_event_loop().stop()
 
 
-@pytest.fixture(scope='session')
-def application():
-	return quamash.QApplication.instance() or quamash.QApplication([])
-
-
 @pytest.fixture
 def loop(request, application):
 	lp = quamash.QEventLoop(application)

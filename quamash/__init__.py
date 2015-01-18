@@ -179,7 +179,7 @@ def _easycallback(fn):
 	>>> import quamash
 	>>> QThread, QObject = quamash.QtCore.QThread, quamash.QtCore.QObject
 	>>>
-	>>> app = getfixture('app')
+	>>> app = getfixture('application')
 	>>>
 	>>> global_thread = QThread.currentThread()
 	>>> class MyObject(QObject):
@@ -232,7 +232,7 @@ class QEventLoop(_baseclass):
 
 	>>> import asyncio
 	>>>
-	>>> app = getfixture('app')
+	>>> app = getfixture('application')
 	>>>
 	>>> @asyncio.coroutine
 	... def xplusy(x, y):

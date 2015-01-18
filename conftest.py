@@ -11,13 +11,8 @@ if os.name == 'nt':
 else:
 	collect_ignore = ['quamash/_windows.py']
 
-_app = None
 
-
-@fixture
-def app():
+@fixture(scope='session')
+def application():
 	from quamash import QApplication
-	global _app
-	if _app is None:
-		_app = QApplication([])
-	return _app
+	return QApplication([])
