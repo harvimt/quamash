@@ -29,8 +29,8 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
     :target: https://travis-ci.org/harvimt/quamash
     :alt: Linux (Travis CI) Build Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/4x4h62jaxs5j8xn4?svg=true
-    :target: https://ci.appveyor.com/project/harvimt/quamash
+.. image:: https://ci.appveyor.com/api/projects/status/github/harvimt/quamash?branch=master&svg=true
+    :target: https://ci.appveyor.com/project/harvimt/quamash/branch/master
     :alt: Windows (Appveyor) Build Status
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
