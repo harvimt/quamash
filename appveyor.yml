@@ -30,7 +30,8 @@ install:
 build: off
 
 test_script:
-  - "%PYTHON%\\Scripts\\py.test.exe"
+  - "%PYTHON%\\Scripts\\py.test.exe --cov quamash"
+  - "%PYTHON%\\Scripts\\coveralls.exe"
 
 notifications:
   - provider: Webhook

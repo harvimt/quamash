@@ -33,6 +33,8 @@ function main () {
     if($env:PYTHON_VERSION -match "^3.3"){
         InstallPackage $env:PYTHON asyncio
     }
+    InstallPackage $env:PYTHON pytest-cov
+    InstallPackage $env:PYTHON python-coveralls
     if($env:QTIMPL -eq "PySide"){
         InstallPackage $env:Python PySide
     }
