@@ -147,10 +147,13 @@ source code in ``/mnt/fuzzy/Development/quamash`` and windows source at ``C:\qua
 
 Continuous Integration & Supported Platforms
 --------------------------------------------
-This project uses Travis CI to perform continuous integration. This works well, but has some limited
-scope. Travis only tests PySide on Linux so this is the best tested platform. Windows is fairly well
-tested semi-manually, but as yet no fully-automated Windows tests exist. FreeBSD, Mac OS X, and other
-\*nix platforms should work, but haven't been thorougly tested.
+This project uses Travis CI to perform tests on linux (Ubuntu 12.04 LTS "Precise Pangolin") and
+Appveyor (Windows Server 2012 R2, similar to Windows 8) to perform continuous integration.
+
+On linux, Python 3.3 and 3.4 with PySide, PyQt4, and PyQt5 are tested. On windows, Python 3.4 with
+PySide, PyQt4 and PyQt5 are tested, but Python 3.3 is only tested with PySide since binary installers
+for PyQt are not provided for Python 3.3 (at least not the newest versions of PyQt), and compiling 
+from source probably isn't worth it.
 
 License
 =======
