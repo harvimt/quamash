@@ -57,12 +57,17 @@ install:
   - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
   # flake8 style checker
   - pip install flake8 pep8-naming flake8-debugger flake8-docstrings
+  # coverage report
+  - pip install pytest-cov coveralls
 script:
-  - QUAMASH_QTIMPL=PySide py.test
-  - QUAMASH_QTIMPL=PyQt4 py.test
-  - QUAMASH_QTIMPL=PyQt5 py.test
+  - QUAMASH_QTIMPL=PySide py.test --cov quamash; mv .coverage .coverage.pyside
+  - QUAMASH_QTIMPL=PyQt4 py.test --cov quamash; mv .coverage .coverage.pyqt4
+  - QUAMASH_QTIMPL=PyQt5 py.test --cov quamash; mv .coverage .coverage.pqt5
+  - coverage combine
   - flake8 --ignore=D1,W191,E501
   - flake8 --select=D1 quamash/*.py
+after_success:
+  - coveralls
 cache:
   directories:
     - /downloads
