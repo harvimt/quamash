@@ -193,13 +193,13 @@ class QEventLoop(_baseclass):
 		self._read_notifiers = {}
 		self._write_notifiers = {}
 
-		self._qtcore = import_module('..QtCore', type(app).__module__)
+		qtcore = import_module('..QtCore', type(app).__module__)
+
+		super().__init__(qtcore)
 
 		self.__call_soon_signaller = signaller = _make_signaller(self._qtcore, object, tuple)
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
-
-		super().__init__()
 
 	def run_forever(self):
 		"""Run eventloop forever."""

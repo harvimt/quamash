@@ -25,7 +25,8 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 
 	"""Proactor based event loop."""
 
-	def __init__(self):
+	def __init__(self, qtcore):
+		self._qtcore = qtcore
 		super().__init__(_IocpProactor())
 
 		self.__event_signaller = _make_signaller(self._qtcore, list)

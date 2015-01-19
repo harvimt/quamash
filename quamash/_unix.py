@@ -186,7 +186,8 @@ class _Selector(selectors.BaseSelector):
 
 
 class _SelectorEventLoop(asyncio.SelectorEventLoop):
-	def __init__(self):
+	def __init__(self, qtcore):
+		self._qtcore = qtcore
 		self._signal_safe_callbacks = []
 
 		selector = _Selector(self)
