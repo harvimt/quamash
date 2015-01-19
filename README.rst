@@ -45,6 +45,31 @@ Installation
 ============
 ``pip install quamash``
 
+Upgrade from Version 0.4 to 0.5
+===============================
+The loop context manager will no longer set the event loop only close it.
+
+Instead of:
+
+..code:: python
+    with loop:
+        loop.run_forever()
+
+do:
+
+..code:: python
+    asyncio.set_event_loop(loop)
+    # ...
+    with loop:
+        loop.run_forever()
+
+It is recommended that you call ``asyncio.set_event_loop`` as early as possible (immediately after instantiating the loop),
+to avoid running asynchronous code before ``asyncio.set_event_loop`` is called.
+
+If you're using multiple different loops in the same application, you know what you're doing (or at least you hope you do),
+then you can ignore this advice.
+
+
 Usage
 =====
 
@@ -89,9 +114,14 @@ Usage
 Changelog
 =========
 
-Upcoming/Unreleased Changes
----------------------------
-* deprecation of event loop as means to ``asyncio.set_event_loop``, now must be called explicitly.
+Version 0.5
+-----------
+* Deprecation of event loop as means to ``asyncio.set_event_loop``, now must be called explicitly.
+* Possible fix to notifiers being called out-of-order (see #25, #27, and e64119e)
+* Better loop cleanup
+* CI Tests pass on windows now
+* Testing improvements
+* Python 3.3 Support. (probably always supported, but it's offially supported/tested now)
 
 Version 0.4.1
 -------------
@@ -139,13 +169,13 @@ Code Coverage
 -------------
 Getting a full coverage support is quite time consuming. In theory this could by done with `pytest-xdist`_,
 but I haven't had time to make that work. Install ``pytest-cov`` with ``pip install pytest-cov`` then
-run ``py.test --cov quamash`` then append a dot and an identifier the generated ``.coverage`` file. For example 
+run ``py.test --cov quamash`` then append a dot and an identifier the generated ``.coverage`` file. For example,
 ``mv .coverage .coverage.nix.p33.pyside`` then repeat on all the platforms you want to run on. (at least linux
 and windows). Put all the ``.coverage.*`` files in one directory that also has quamash source code in it.
 ``cd`` to that directory and run ``coverage combine`` finally run ``coverage html`` for html based reports
 or ``coverage report`` for a simple report. These last commands may fail with errors about not being able to
 find source code. Use the ``.coveragerc`` file to specify equivelant paths.  The default configuration has linux
-source code in ``/mnt/fuzzy/Development/quamash`` and windows source at ``C:\quamash``.
+source code in ``/quamash`` and windows source at ``C:\quamash``.
 
 Continuous Integration & Supported Platforms
 --------------------------------------------
@@ -171,3 +201,4 @@ starts with a "Q".
 .. _`pytest`: http://pytest.org
 .. _`BSD License`: http://opensource.org/licenses/BSD-2-Clause
 .. _tox: https://tox.readthedocs.org/
+.. _pytest-xdist: https://pypi.python.org/pypi/pytest-xdist
