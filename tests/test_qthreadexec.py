@@ -3,18 +3,19 @@
 # BSD License
 import pytest
 import quamash
+from quamash import QtCore
 
 
 @pytest.fixture
 def executor(request):
-	exe = quamash.QThreadExecutor(5)
+	exe = quamash.QThreadExecutor(QtCore.Qthread, 5)
 	request.addfinalizer(exe.shutdown)
 	return exe
 
 
 @pytest.fixture
 def shutdown_executor():
-	exe = quamash.QThreadExecutor(5)
+	exe = quamash.QThreadExecutor(QtCore.QThread, 5)
 	exe.shutdown()
 	return exe
 

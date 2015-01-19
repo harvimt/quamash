@@ -54,7 +54,7 @@ from ._common import with_logger
 
 
 @with_logger
-class _QThreadWorker(QtCore.QThread):
+class _QThreadWorker:
 
 	"""
 	Read from the queue.
@@ -109,18 +109,23 @@ class QThreadExecutor:
 
 	Same API as `concurrent.futures.Executor`
 
-	>>> from quamash import QThreadExecutor
-	>>> with QThreadExecutor(5) as executor:
+	>>> from quamash import QThreadExecutor, QtCore
+	>>> with QThreadExecutor(QtCore.QThread, 5) as executor:
 	...     f = executor.submit(lambda x: 2 + x, 2)
 	...     r = f.result()
 	...     assert r == 4
 	"""
 
-	def __init__(self, max_workers=10):
+	def __init__(self, qthread_class, max_workers=10):
 		super().__init__()
+		assert isinstance(qthread_class, type)
+
+		class QThreadWorker(_QThreadWorker, qthread_class):
+			pass
+
 		self.__max_workers = max_workers
 		self.__queue = Queue()
-		self.__workers = [_QThreadWorker(self.__queue, i + 1) for i in range(max_workers)]
+		self.__workers = [QThreadWorker(self.__queue, i + 1) for i in range(max_workers)]
 		self.__been_shutdown = False
 
 		for w in self.__workers:
@@ -212,7 +217,9 @@ class QEventLoop(_baseclass):
 		self._read_notifiers = {}
 		self._write_notifiers = {}
 
-		self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
+		self._qtcore = QtCore
+
+		self.__call_soon_signaller = signaller = _make_signaller(self._qtcore, object, tuple)
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
 
@@ -310,7 +317,7 @@ class QEventLoop(_baseclass):
 			handle._run()
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
-		timer = QtCore.QTimer(self.__app)
+		timer = self._qtcore.QTimer(self.__app)
 		timer.timeout.connect(upon_timeout)
 		timer.setSingleShot(True)
 		timer.start(delay * 1000)
@@ -342,7 +349,7 @@ class QEventLoop(_baseclass):
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
 
-		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
+		notifier = self._qtcore.QSocketNotifier(fd, self._qtcore.QSocketNotifier.Read)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
@@ -374,7 +381,7 @@ class QEventLoop(_baseclass):
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
 
-		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Write)
+		notifier = self._qtcore.QSocketNotifier(fd, self._qtcore.QSocketNotifier.Write)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
@@ -453,7 +460,7 @@ class QEventLoop(_baseclass):
 		executor = executor or self.__default_executor
 		if executor is None:
 			self._logger.debug('Creating default executor')
-			executor = self.__default_executor = QThreadExecutor()
+			executor = self.__default_executor = QThreadExecutor(self._qtcore.QThread)
 		self._logger.debug('Using default executor')
 
 		return asyncio.wrap_future(executor.submit(callback, *args))
