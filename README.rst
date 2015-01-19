@@ -116,6 +116,10 @@ Usage
 Changelog
 =========
 
+Version 0.5.1
+-------------
+* Fixes rst syntax error in this README
+
 Version 0.5
 -----------
 * Deprecation of event loop as means to ``asyncio.set_event_loop``, now must be called explicitly.
