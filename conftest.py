@@ -14,13 +14,26 @@ else:
 
 
 def pytest_addoption(parser):
-	parser.addoption("--qtimpl", default='PySide')
+	parser.addoption("--qtimpl", default='guess')
+
+
+def guess_qtimpl():
+	for guess in ('PyQt5', 'PyQt4', 'PySide'):
+		try:
+			__import__(guess)
+		except ImportError:
+			continue
+		else:
+			return guess
 
 
 @fixture(scope='session')
 def application(request):
 	qtimpl = request.config.getoption('qtimpl')
+	if qtimpl == 'guess':
+		qtimpl = guess_qtimpl()
 	__import__(qtimpl)
+
 	for module in ('.QtWidgets', '.QtGui'):
 		try:
 			return import_module(module, qtimpl).QApplication([])
@@ -31,5 +44,8 @@ def application(request):
 @fixture(scope='session')
 def qtcore(request):
 	qtimpl = request.config.getoption('qtimpl')
+	if qtimpl == 'guess':
+		qtimpl = guess_qtimpl()
 	__import__(qtimpl)
+
 	return import_module('.QtCore', qtimpl)
