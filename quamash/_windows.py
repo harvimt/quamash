@@ -15,7 +15,7 @@ except ImportError:  # noqa
 
 import math
 
-from . import QtCore, QtModule, _make_signaller
+from . import QtCore, _make_signaller
 from ._common import with_logger
 
 UINT32_MAX = 0xffffffff
