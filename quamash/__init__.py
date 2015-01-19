@@ -162,6 +162,9 @@ class QEventLoop(_baseclass):
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
 
+	Parameters:
+	:app: Any instance of QApplication
+
 	>>> import asyncio
 	>>>
 	>>> app = getfixture('application')
@@ -180,8 +183,9 @@ class QEventLoop(_baseclass):
 
 	def __init__(self, app):
 		self.__timers = []
+		if app is None:
+			raise ValueError("app must be an instance of QApplication")
 		self.__app = app
-		assert self.__app is not None, 'No QApplication has been instantiated'
 		self.__is_running = False
 		self.__debug_enabled = False
 		self.__default_executor = None
@@ -194,8 +198,6 @@ class QEventLoop(_baseclass):
 		self.__call_soon_signaller = signaller = _make_signaller(self._qtcore, object, tuple)
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
-
-		assert self.__app is not None
 
 		super().__init__()
 
