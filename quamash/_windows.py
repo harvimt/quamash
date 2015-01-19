@@ -15,7 +15,7 @@ except ImportError:  # noqa
 
 import math
 
-from . import QtCore
+from . import QtCore, _make_signaller
 from ._common import with_logger
 
 UINT32_MAX = 0xffffffff
@@ -28,8 +28,10 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 	def __init__(self):
 		super().__init__(_IocpProactor())
 
-		self.__event_poller = _EventPoller()
-		self.__event_poller.sig_events.connect(self._process_events)
+		self.__event_signaller = _make_signaller(QtCore, list)
+		self.__event_signal = self.__event_signaller.signal
+		self.__event_signal.connect(self._process_events)
+		self.__event_poller = _EventPoller(self.__event_signal)
 
 	def _process_events(self, events):
 		"""Process events from proactor."""
@@ -166,11 +168,12 @@ class _EventWorker(QtCore.QThread):
 
 
 @with_logger
-class _EventPoller(QtCore.QObject):
+class _EventPoller:
 
 	"""Polling of events in separate thread."""
 
-	sig_events = QtCore.Signal(list)
+	def __init__(self, sig_events):
+		self.sig_events = sig_events
 
 	def start(self, proactor):
 		self._logger.debug('Starting (proactor: {})...'.format(proactor))

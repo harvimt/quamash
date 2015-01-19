@@ -12,7 +12,6 @@ import sys
 import os
 import asyncio
 import time
-from functools import wraps
 import itertools
 from queue import Queue
 from concurrent.futures import Future
@@ -47,9 +46,6 @@ if QtModuleName == 'PyQt5':
 	QApplication = QtWidgets.QApplication
 else:
 	QApplication = QtGui.QApplication
-
-if not hasattr(QtCore, 'Signal'):
-	QtCore.Signal = QtCore.pyqtSignal
 
 
 from ._common import with_logger
@@ -165,57 +161,13 @@ class QThreadExecutor:
 		self.shutdown()
 
 
-def _easycallback(fn):
-	"""
-	Decorator that wraps a callback in a signal.
-
-	It also packs & unpacks arguments, and makes the wrapped function effectively
-	threadsafe. If you call the function from one thread, it will be executed in
-	the thread the QObject has affinity with.
-
-	Remember: only objects that inherit from QObject can support signals/slots
-
-	>>> import asyncio
-	>>>
-	>>> import quamash
-	>>> QThread, QObject = quamash.QtCore.QThread, quamash.QtCore.QObject
-	>>>
-	>>> app = getfixture('application')
-	>>>
-	>>> global_thread = QThread.currentThread()
-	>>> class MyObject(QObject):
-	...     @_easycallback
-	...     def mycallback(self):
-	...         global global_thread, mythread
-	...         cur_thread = QThread.currentThread()
-	...         assert cur_thread is not global_thread
-	...         assert cur_thread is mythread
-	>>>
-	>>> mythread = QThread()
-	>>> mythread.start()
-	>>> myobject = MyObject()
-	>>> myobject.moveToThread(mythread)
-	>>>
-	>>> @asyncio.coroutine
-	... def mycoroutine():
-	...     myobject.mycallback()
-	>>>
-	>>> loop = QEventLoop(app)
-	>>> asyncio.set_event_loop(loop)
-	>>> with loop:
-	...     loop.run_until_complete(mycoroutine())
-	"""
-	@wraps(fn)
-	def in_wrapper(self, *args, **kwargs):
-		return signaler.signal.emit(self, args, kwargs)
-
-	class Signaler(QtCore.QObject):
-		signal = QtCore.Signal(object, tuple, dict)
-
-	signaler = Signaler()
-	signaler.signal.connect(lambda self, args, kwargs: fn(self, *args, **kwargs))
-	return in_wrapper
-
+def _make_signaller(qtimpl_qtcore, *args):
+	class Signaller(qtimpl_qtcore.QObject):
+		try:
+			signal = qtimpl_qtcore.Signal(*args)
+		except AttributeError:
+			signal = qtimpl_qtcore.pyqtSignal(*args)
+	return Signaller()
 
 if os.name == 'nt':
 	from . import _windows
@@ -257,6 +209,10 @@ class QEventLoop(_baseclass):
 		self.__exception_handler = None
 		self._read_notifiers = {}
 		self._write_notifiers = {}
+
+		self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
+		self.__call_soon_signal = signaller.signal
+		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
 
 		assert self.__app is not None
 
@@ -491,10 +447,9 @@ class QEventLoop(_baseclass):
 
 	# Methods for interacting with threads.
 
-	@_easycallback
 	def call_soon_threadsafe(self, callback, *args):
 		"""Thread-safe version of call_soon."""
-		self.call_soon(callback, *args)
+		self.__call_soon_signal.emit(callback, args)
 
 	def run_in_executor(self, executor, callback, *args):
 		"""Run callback in executor.
