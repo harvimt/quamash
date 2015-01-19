@@ -30,7 +30,7 @@ install:
 build: off
 
 test_script:
-  - "%PYTHON%\\Scripts\\py.test.exe"
+  - "%PYTHON%\\Scripts\\py.test.exe --qtimpl %QTIMPL%"
 
 notifications:
   - provider: Webhook

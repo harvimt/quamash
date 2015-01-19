@@ -15,22 +15,24 @@ except ImportError:  # noqa
 
 import math
 
-from . import QtCore
+from . import _make_signaller
 from ._common import with_logger
 
 UINT32_MAX = 0xffffffff
 
 
-class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
+class _ProactorEventLoop(asyncio.ProactorEventLoop):
 
 	"""Proactor based event loop."""
 
-	def __init__(self):
-		QtCore.QObject.__init__(self)
-		asyncio.ProactorEventLoop.__init__(self, _IocpProactor())
+	def __init__(self, qtcore):
+		self._qtcore = qtcore
+		super().__init__(_IocpProactor())
 
-		self.__event_poller = _EventPoller()
-		self.__event_poller.sig_events.connect(self._process_events)
+		self.__event_signaller = _make_signaller(self._qtcore, list)
+		self.__event_signal = self.__event_signaller.signal
+		self.__event_signal.connect(self._process_events)
+		self.__event_poller = _EventPoller(self.__event_signal, self._qtcore)
 
 	def _process_events(self, events):
 		"""Process events from proactor."""
@@ -113,14 +115,14 @@ class _IocpProactor(windows_events.IocpProactor):
 
 
 @with_logger
-class _EventWorker(QtCore.QThread):
-	def __init__(self, proactor, parent):
+class _EventWorker:
+	def __init__(self, proactor, parent, semaphore_factory):
 		super().__init__()
 
 		self.__stop = False
 		self.__proactor = proactor
 		self.__sig_events = parent.sig_events
-		self.__semaphore = QtCore.QSemaphore()
+		self.__semaphore = semaphore_factory()
 
 	def start(self):
 		super().start()
@@ -145,15 +147,21 @@ class _EventWorker(QtCore.QThread):
 
 
 @with_logger
-class _EventPoller(QtCore.QObject):
+class _EventPoller:
 
 	"""Polling of events in separate thread."""
 
-	sig_events = QtCore.Signal(list)
+	def __init__(self, sig_events, qtcore):
+		self.sig_events = sig_events
+		self._qtcore = qtcore
 
 	def start(self, proactor):
 		self._logger.debug('Starting (proactor: {})...'.format(proactor))
-		self.__worker = _EventWorker(proactor, self)
+
+		class EventWorker(_EventWorker, self._qtcore.QThread):
+			pass
+
+		self.__worker = EventWorker(proactor, self, self._qtcore.QSemaphore)
 		self.__worker.start()
 
 	def stop(self):

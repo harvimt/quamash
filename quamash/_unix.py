@@ -8,7 +8,7 @@ import asyncio
 from asyncio import selectors
 import collections
 
-from . import QtCore, with_logger
+from . import with_logger
 
 
 EVENT_READ = (1 << 0)
@@ -106,11 +106,11 @@ class _Selector(selectors.BaseSelector):
 		self._fd_to_key[key.fd] = key
 
 		if events & EVENT_READ:
-			notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Read)
+			notifier = self._qtcore.QSocketNotifier(key.fd, self._qtcore.QSocketNotifier.Read)
 			notifier.activated.connect(self.__on_read_activated)
 			self.__read_notifiers[key.fd] = notifier
 		if events & EVENT_WRITE:
-			notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Write)
+			notifier = self._qtcore.QSocketNotifier(key.fd, self._qtcore.QSocketNotifier.Write)
 			notifier.activated.connect(self.__on_write_activated)
 			self.__write_notifiers[key.fd] = notifier
 
@@ -186,7 +186,8 @@ class _Selector(selectors.BaseSelector):
 
 
 class _SelectorEventLoop(asyncio.SelectorEventLoop):
-	def __init__(self):
+	def __init__(self, qtcore):
+		self._qtcore = qtcore
 		self._signal_safe_callbacks = []
 
 		selector = _Selector(self)

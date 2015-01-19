@@ -65,7 +65,6 @@ def loop(request, application):
 
 	orig_excepthook = sys.excepthook
 	sys.excepthook = excepthook
-	lp.set_exception_handler(except_handler)
 
 	request.addfinalizer(fin)
 	return lp
@@ -74,12 +73,15 @@ def loop(request, application):
 @pytest.fixture(
 	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor]
 )
-def executor(request):
+def executor(request, qtcore):
 	exc_cls = request.param
 	if exc_cls is None:
 		return None
+	elif exc_cls is quamash.QThreadExecutor:
+		exc = exc_cls(qtcore)
+	else:
+		exc = exc_cls(1)  # FIXME? fixed number of workers?
 
-	exc = exc_cls(1)  # FIXME? fixed number of workers?
 	request.addfinalizer(exc.shutdown)
 	return exc
 
