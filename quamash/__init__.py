@@ -15,42 +15,13 @@ import time
 import itertools
 from queue import Queue
 from concurrent.futures import Future
-import logging
 from importlib import import_module
-logger = logging.getLogger('quamash')
-
-try:
-	QtModuleName = os.environ['QUAMASH_QTIMPL']
-except KeyError:
-	QtModuleName = None
-else:
-	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
-	QtModule = __import__(QtModuleName)
-
-if not QtModuleName:
-	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
-		try:
-			__import__(QtModuleName)
-		except ImportError:
-			continue
-		else:
-			break
-	else:
-		raise ImportError('No Qt implementations found')
-
-QtCore = import_module('.QtCore', QtModuleName)
-
-logger.info('Using Qt Implementation: {}'.format(QtModuleName))
-
-for module in ('.QtWidgets', '.QtGui'):
-	try:
-		QApplication = import_module(module, QtModuleName).QApplication
-		break
-	except (ImportError, AttributeError):
-		continue
-
+import warnings
 
 from ._common import with_logger
+
+if 'QUAMASH_QTIMPL' in os.environ:
+	warnings.warn("QUAMASH_QTIMPL environment variable set, this version of quamash ignores it.")
 
 
 @with_logger
@@ -109,7 +80,8 @@ class QThreadExecutor:
 
 	Same API as `concurrent.futures.Executor`
 
-	>>> from quamash import QThreadExecutor, QtCore
+	>>> from quamash import QThreadExecutor
+	>>> QtCore = getfixture('qtcore')
 	>>> with QThreadExecutor(QtCore.QThread, 5) as executor:
 	...     f = executor.submit(lambda x: 2 + x, 2)
 	...     r = f.result()
@@ -206,9 +178,9 @@ class QEventLoop(_baseclass):
 	...     loop.run_until_complete(xplusy(2, 2))
 	"""
 
-	def __init__(self, app=None):
+	def __init__(self, app):
 		self.__timers = []
-		self.__app = app or QApplication.instance()
+		self.__app = app
 		assert self.__app is not None, 'No QApplication has been instantiated'
 		self.__is_running = False
 		self.__debug_enabled = False
@@ -217,7 +189,7 @@ class QEventLoop(_baseclass):
 		self._read_notifiers = {}
 		self._write_notifiers = {}
 
-		self._qtcore = QtCore
+		self._qtcore = import_module('..QtCore', type(app).__module__)
 
 		self.__call_soon_signaller = signaller = _make_signaller(self._qtcore, object, tuple)
 		self.__call_soon_signal = signaller.signal
