@@ -102,10 +102,12 @@ Version 0.4.1
 Version 0.4
 -----------
 * Major improvements to tests
-    - integration with Travis CI
-    - more tests
-    - all tests pass
-    - cross platform/configuration tests
+
+  - integration with Travis CI
+  - more tests
+  - all tests pass
+  - cross platform/configuration tests
+
 * Bug #13 discovered and fixed
 * Force which Qt Implementation to use with ``QUQMASH_QTIMPL`` environment variable.
 * Implement ``QEventLoop.remove_reader`` and ``QEventLoop.remove_writer``
