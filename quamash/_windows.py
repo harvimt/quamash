@@ -21,13 +21,12 @@ from ._common import with_logger
 UINT32_MAX = 0xffffffff
 
 
-class _ProactorEventLoop(QtCore.QObject, asyncio.ProactorEventLoop):
+class _ProactorEventLoop(asyncio.ProactorEventLoop):
 
 	"""Proactor based event loop."""
 
 	def __init__(self):
-		QtCore.QObject.__init__(self)
-		asyncio.ProactorEventLoop.__init__(self, _IocpProactor())
+		super().__init__(_IocpProactor())
 
 		self.__event_poller = _EventPoller()
 		self.__event_poller.sig_events.connect(self._process_events)

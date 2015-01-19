@@ -104,7 +104,7 @@ class _QThreadWorker(QtCore.QThread):
 
 
 @with_logger
-class QThreadExecutor(QtCore.QObject):
+class QThreadExecutor:
 
 	"""
 	ThreadExecutor that produces QThreads.
@@ -118,8 +118,8 @@ class QThreadExecutor(QtCore.QObject):
 	...     assert r == 4
 	"""
 
-	def __init__(self, max_workers=10, parent=None):
-		super().__init__(parent)
+	def __init__(self, max_workers=10):
+		super().__init__()
 		self.__max_workers = max_workers
 		self.__queue = Queue()
 		self.__workers = [_QThreadWorker(self.__queue, i + 1) for i in range(max_workers)]
