@@ -51,13 +51,15 @@ The loop context manager will no longer set the event loop only close it.
 
 Instead of:
 
-..code:: python
+.. code:: python
+
     with loop:
         loop.run_forever()
 
 do:
 
-..code:: python
+.. code:: python
+
     asyncio.set_event_loop(loop)
     # ...
     with loop:
