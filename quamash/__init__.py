@@ -24,52 +24,32 @@ if 'QUAMASH_QTIMPL' in os.environ:
 	warnings.warn("QUAMASH_QTIMPL environment variable set, this version of quamash ignores it.")
 
 
-@with_logger
-class _QThreadWorker:
+def _run_in_worker(queue, num, logger):
+	while True:
+		command = queue.get()
+		if command is None:
+			# Stopping...
+			break
 
-	"""
-	Read from the queue.
-
-	For use by the QThreadExecutor
-	"""
-
-	def __init__(self, queue, num):
-		self.__queue = queue
-		self.__stop = False
-		self.__num = num
-		super().__init__()
-
-	def run(self):
-		queue = self.__queue
-		while True:
-			command = queue.get()
-			if command is None:
-				# Stopping...
-				break
-
-			future, callback, args, kwargs = command
-			self._logger.debug(
-				'#{} got callback {} with args {} and kwargs {} from queue'
-				.format(self.__num, callback, args, kwargs)
-			)
-			if future.set_running_or_notify_cancel():
-				self._logger.debug('Invoking callback')
-				try:
-					r = callback(*args, **kwargs)
-				except Exception as err:
-					self._logger.debug('Setting Future exception: {}'.format(err))
-					future.set_exception(err)
-				else:
-					self._logger.debug('Setting Future result: {}'.format(r))
-					future.set_result(r)
+		future, callback, args, kwargs = command
+		logger.debug(
+			'#{} got callback {} with args {} and kwargs {} from queue'
+			.format(num, callback, args, kwargs)
+		)
+		if future.set_running_or_notify_cancel():
+			logger.debug('Invoking callback')
+			try:
+				r = callback(*args, **kwargs)
+			except Exception as err:
+				logger.debug('Setting Future exception: {}'.format(err))
+				future.set_exception(err)
 			else:
-				self._logger.debug('Future was canceled')
+				logger.debug('Setting Future result: {}'.format(r))
+				future.set_result(r)
+		else:
+			logger.debug('Future was canceled')
 
-		self._logger.debug('Thread #{} stopped'.format(self.__num))
-
-	def wait(self):
-		self._logger.debug('Waiting for thread #{} to stop...'.format(self.__num))
-		super().wait()
+	logger.debug('Thread #{} stopped'.format(num))
 
 
 @with_logger
@@ -82,18 +62,28 @@ class QThreadExecutor:
 
 	>>> from quamash import QThreadExecutor
 	>>> QtCore = getfixture('qtcore')
-	>>> with QThreadExecutor(QtCore.QThread, 5) as executor:
+	>>> with QThreadExecutor(QtCore, 5) as executor:
 	...     f = executor.submit(lambda x: 2 + x, 2)
 	...     r = f.result()
 	...     assert r == 4
 	"""
 
-	def __init__(self, qthread_class, max_workers=10):
+	def __init__(self, qtcore, max_workers=10):
 		super().__init__()
-		assert isinstance(qthread_class, type)
 
-		class QThreadWorker(_QThreadWorker, qthread_class):
-			pass
+		@with_logger
+		class QThreadWorker(qtcore.QThread):
+			def __init__(self, queue, num):
+				super().__init__()
+				self.__queue = queue
+				self.__num = num
+
+			def run(self):
+				_run_in_worker(self.__queue, self.__num, self._logger)
+
+			def wait(self):
+				self._logger.debug('Waiting for thread #{} to stop...'.format(self.__num))
+				super().wait()
 
 		self.__max_workers = max_workers
 		self.__queue = Queue()
@@ -438,7 +428,7 @@ class QEventLoop(_baseclass):
 		executor = executor or self.__default_executor
 		if executor is None:
 			self._logger.debug('Creating default executor')
-			executor = self.__default_executor = QThreadExecutor(self._qtcore.QThread)
+			executor = self.__default_executor = QThreadExecutor(self._qtcore)
 		self._logger.debug('Using default executor')
 
 		return asyncio.wrap_future(executor.submit(callback, *args))
