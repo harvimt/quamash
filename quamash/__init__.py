@@ -141,12 +141,16 @@ class QThreadExecutor:
 
 
 def _make_signaller(qtimpl_qtcore, *args):
+	try:
+		signal_class = qtimpl_qtcore.Signal
+	except AttributeError:
+		signal_class = qtimpl_qtcore.pyqtSignal
+
 	class Signaller(qtimpl_qtcore.QObject):
-		try:
-			signal = qtimpl_qtcore.Signal(*args)
-		except AttributeError:
-			signal = qtimpl_qtcore.pyqtSignal(*args)
+		signal = signal_class(*args)
+
 	return Signaller()
+
 
 if os.name == 'nt':
 	from . import _windows
