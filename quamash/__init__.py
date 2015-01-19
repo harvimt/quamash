@@ -16,20 +16,21 @@ import itertools
 from queue import Queue
 from concurrent.futures import Future
 import logging
+from importlib import import_module
 logger = logging.getLogger('quamash')
 
 try:
 	QtModuleName = os.environ['QUAMASH_QTIMPL']
 except KeyError:
-	QtModule = None
+	QtModuleName = None
 else:
 	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
 	QtModule = __import__(QtModuleName)
 
-if not QtModule:
+if not QtModuleName:
 	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
 		try:
-			QtModule = __import__(QtModuleName)
+			__import__(QtModuleName)
 		except ImportError:
 			continue
 		else:
@@ -37,15 +38,16 @@ if not QtModule:
 	else:
 		raise ImportError('No Qt implementations found')
 
+QtCore = import_module('.QtCore', QtModuleName)
+
 logger.info('Using Qt Implementation: {}'.format(QtModuleName))
 
-QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
-QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
-if QtModuleName == 'PyQt5':
-	from PyQt5 import QtWidgets
-	QApplication = QtWidgets.QApplication
-else:
-	QApplication = QtGui.QApplication
+for module in ('.QtWidgets', '.QtGui'):
+	try:
+		QApplication = import_module(module, QtModuleName).QApplication
+		break
+	except (ImportError, AttributeError):
+		continue
 
 
 from ._common import with_logger
