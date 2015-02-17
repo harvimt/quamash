@@ -279,7 +279,8 @@ class QEventLoop(_baseclass):
 		"""Run until Future is complete."""
 		self._logger.debug('Running {} until complete'.format(future))
 		future = asyncio.async(future, loop=self)
-		stop = lambda *args: self.stop()
+
+		def stop(*args): self.stop()  # noqa
 		future.add_done_callback(stop)
 		try:
 			self.run_forever()
