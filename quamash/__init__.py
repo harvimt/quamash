@@ -493,11 +493,13 @@ class QEventLoop(_baseclass):
 				return f
 			callback, args = callback.callback, callback.args
 
-		executor = executor or self.__default_executor
+		if executor is None:
+			self._logger.debug('Using default executor')
+			executor = self.__default_executor
+
 		if executor is None:
 			self._logger.debug('Creating default executor')
 			executor = self.__default_executor = QThreadExecutor()
-		self._logger.debug('Using default executor')
 
 		return asyncio.wrap_future(executor.submit(callback, *args))
 
