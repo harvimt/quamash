@@ -58,11 +58,11 @@ install:
   # flake8 style checker
   - pip install flake8 pep8-naming flake8-debugger flake8-docstrings
 script:
+  - flake8
+  - flake8 --select=D1 quamash/*.py
   - QUAMASH_QTIMPL=PySide py.test
   - QUAMASH_QTIMPL=PyQt4 py.test
   - QUAMASH_QTIMPL=PyQt5 py.test
-  - flake8 --ignore=D1,W191,E501
-  - flake8 --select=D1 quamash/*.py
 cache:
   directories:
     - /downloads
