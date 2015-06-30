@@ -688,3 +688,29 @@ def test_scheduling(loop, sock_pair):
 	fut.add_done_callback(fut_cb)
 	loop.add_writer(fd, writer_cb, fut)
 	loop.run_until_complete(cb_called)
+
+
+def test_exception_handler(application):
+	handler_called = False
+	coro_run = False
+	loop = quamash.QEventLoop(application)
+	asyncio.set_event_loop(loop)
+
+	@asyncio.coroutine
+	def future_except():
+		nonlocal coro_run
+		coro_run = True
+		raise ExceptionTester()
+
+	def exct_handler(loop, data):
+		nonlocal handler_called
+		handler_called = True
+
+	try:
+		loop.set_exception_handler(exct_handler)
+		asyncio.async(future_except())
+		loop.run_until_complete(asyncio.sleep(.1))
+	finally:
+		asyncio.set_event_loop(None)
+	assert coro_run
+	assert handler_called
