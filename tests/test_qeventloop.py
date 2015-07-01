@@ -690,12 +690,16 @@ def test_scheduling(loop, sock_pair):
 	loop.run_until_complete(cb_called)
 
 
-def test_exception_handler(application):
+@pytest.mark.parametrize('use_quamash',
+	[pytest.mark.xfail(True, reason="bug34"), False]
+)
+def test_exception_handler(use_quamash, loop):
 	handler_called = False
 	coro_run = False
-	loop = quamash.QEventLoop(application)
+	if not use_quamash:
+		loop = asyncio.new_event_loop()
+		asyncio.set_event_loop(loop)
 	loop.set_debug(True)
-	asyncio.set_event_loop(loop)
 
 	@asyncio.coroutine
 	def future_except():
@@ -709,18 +713,15 @@ def test_exception_handler(application):
 		handler_called = True
 
 	loop.set_exception_handler(exct_handler)
-	fut = asyncio.async(future_except())
+	asyncio.async(future_except())
 	loop.run_forever()
 
 	assert coro_run
 	assert handler_called
 
 
-def test_exception_handler_simple(application):
+def test_exception_handler_simple(loop):
 	handler_called = False
-	loop = quamash.QEventLoop(application)
-	loop.set_debug(True)
-	asyncio.set_event_loop(loop)
 
 	def exct_handler(loop, data):
 		nonlocal handler_called
