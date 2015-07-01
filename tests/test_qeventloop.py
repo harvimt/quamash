@@ -694,23 +694,43 @@ def test_exception_handler(application):
 	handler_called = False
 	coro_run = False
 	loop = quamash.QEventLoop(application)
+	loop.set_debug(True)
 	asyncio.set_event_loop(loop)
 
 	@asyncio.coroutine
 	def future_except():
 		nonlocal coro_run
 		coro_run = True
+		loop.stop()
 		raise ExceptionTester()
 
 	def exct_handler(loop, data):
 		nonlocal handler_called
 		handler_called = True
 
-	try:
-		loop.set_exception_handler(exct_handler)
-		asyncio.async(future_except())
-		loop.run_until_complete(asyncio.sleep(.1))
-	finally:
-		asyncio.set_event_loop(None)
+	loop.set_exception_handler(exct_handler)
+	fut = asyncio.async(future_except())
+	loop.run_forever()
+
 	assert coro_run
+	assert handler_called
+
+
+def test_exception_handler_simple(application):
+	handler_called = False
+	loop = quamash.QEventLoop(application)
+	loop.set_debug(True)
+	asyncio.set_event_loop(loop)
+
+	def exct_handler(loop, data):
+		nonlocal handler_called
+		handler_called = True
+
+	loop.set_exception_handler(exct_handler)
+	fut1 = asyncio.Future()
+	fut1.set_exception(ExceptionTester())
+	asyncio.async(fut1)
+	del fut1
+	loop.call_later(0.1, loop.stop)
+	loop.run_forever()
 	assert handler_called
