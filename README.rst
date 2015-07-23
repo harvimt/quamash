@@ -116,6 +116,12 @@ Usage
 Changelog
 =========
 
+Version 0.5.2
+-------------
+* Fixes to tests, and CI configuration
+* Fixes `#35`_ and `#31`_ (both minor bugs)
+* Uploade wheels to PyPI
+
 Version 0.5.1
 -------------
 * Fixes rst syntax error in this README
@@ -208,3 +214,5 @@ starts with a "Q".
 .. _`BSD License`: http://opensource.org/licenses/BSD-2-Clause
 .. _tox: https://tox.readthedocs.org/
 .. _pytest-xdist: https://pypi.python.org/pypi/pytest-xdist
+.. _#31: https://github.com/harvimt/quamash/issues/31
+.. _#35: https://github.com/harvimt/quamash/issues/35
