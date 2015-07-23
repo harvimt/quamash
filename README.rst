@@ -5,23 +5,23 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :author: Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>
 
-.. image:: https://pypip.in/version/quamash/badge.svg
+.. image:: https://img.shields.io/pypi/v/quamash.svg
     :target: https://pypi.python.org/pypi/quamash/
     :alt: Latest Version
 
-.. image:: https://pypip.in/download/quamash/badge.svg
-    :target: https://pypi.python.org/pypi//quamash/
+.. image:: https://img.shields.io/pypi/dm/quamash.svg
+    :target: https://pypi.python.org/pypi/quamash/
     :alt: Downloads
 
-.. image:: https://pypip.in/py_versions/quamash/badge.svg
+.. image:: https://img.shields.io/pypi/pyversions/quamash.svg
     :target: https://pypi.python.org/pypi/quamash/
     :alt: Supported Python versions
 
-.. image:: https://pypip.in/license/quamash/badge.svg
+.. image:: https://img.shields.io/pypi/l/quamash.svg
     :target: https://pypi.python.org/pypi/quamash/
     :alt: License
 
-.. image:: https://pypip.in/status/quamash/badge.svg
+.. image:: https://img.shields.io/pypi/status/Django.svg
     :target: https://pypi.python.org/pypi/quamash/
     :alt: Development Status
 
@@ -29,7 +29,7 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
     :target: https://travis-ci.org/harvimt/quamash
     :alt: Linux (Travis CI) Build Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/github/harvimt/quamash?branch=master&svg=true
+.. image:: https://img.shields.io/appveyor/ci/harvimt/quamash.svg
     :target: https://ci.appveyor.com/project/harvimt/quamash/branch/master
     :alt: Windows (Appveyor) Build Status
 
