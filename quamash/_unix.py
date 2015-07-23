@@ -2,7 +2,7 @@
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
 
-""" UNIX specific Quamash functionality. """
+"""UNIX specific Quamash functionality."""
 
 import asyncio
 from asyncio import selectors
