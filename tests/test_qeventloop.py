@@ -690,8 +690,8 @@ def test_scheduling(loop, sock_pair):
 	loop.run_until_complete(cb_called)
 
 
-@pytest.mark.parametrize('use_quamash',
-	[True, False]
+@pytest.mark.parametrize(
+	'use_quamash', [True, False]
 )
 def test_exception_handler(use_quamash, loop):
 	handler_called = False
