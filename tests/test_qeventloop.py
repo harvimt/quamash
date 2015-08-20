@@ -691,7 +691,7 @@ def test_scheduling(loop, sock_pair):
 
 
 @pytest.mark.parametrize('use_quamash',
-	[pytest.mark.xfail(True, reason="bug34"), False]
+	[True, False]
 )
 def test_exception_handler(use_quamash, loop):
 	handler_called = False
@@ -715,6 +715,7 @@ def test_exception_handler(use_quamash, loop):
 	loop.set_exception_handler(exct_handler)
 	asyncio.async(future_except())
 	loop.run_forever()
+
 
 	assert coro_run
 	assert handler_called
