@@ -690,15 +690,13 @@ def test_scheduling(loop, sock_pair):
 	loop.run_until_complete(cb_called)
 
 
-@pytest.mark.parametrize(
-	'use_quamash', [True, False]
+@pytest.mark.xfail(
+	'sys.version_info < (3,4)',
+	reason="Doesn't work on python older than 3.4",
 )
-def test_exception_handler(use_quamash, loop):
+def test_exception_handler(loop):
 	handler_called = False
 	coro_run = False
-	if not use_quamash:
-		loop = asyncio.new_event_loop()
-		asyncio.set_event_loop(loop)
 	loop.set_debug(True)
 
 	@asyncio.coroutine
