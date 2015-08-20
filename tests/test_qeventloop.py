@@ -716,7 +716,6 @@ def test_exception_handler(use_quamash, loop):
 	asyncio.async(future_except())
 	loop.run_forever()
 
-
 	assert coro_run
 	assert handler_called
 
