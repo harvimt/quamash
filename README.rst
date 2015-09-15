@@ -116,6 +116,10 @@ Usage
 Changelog
 =========
 
+Version 0.5.3
+-------------
+* Fix to `#34`_
+
 Version 0.5.2
 -------------
 * Fixes to tests, and CI configuration
@@ -215,4 +219,5 @@ starts with a "Q".
 .. _tox: https://tox.readthedocs.org/
 .. _pytest-xdist: https://pypi.python.org/pypi/pytest-xdist
 .. _#31: https://github.com/harvimt/quamash/issues/31
+.. _#34: https://github.com/harvimt/quamash/issues/34
 .. _#35: https://github.com/harvimt/quamash/issues/35

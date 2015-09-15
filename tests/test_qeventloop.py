@@ -688,3 +688,48 @@ def test_scheduling(loop, sock_pair):
 	fut.add_done_callback(fut_cb)
 	loop.add_writer(fd, writer_cb, fut)
 	loop.run_until_complete(cb_called)
+
+
+@pytest.mark.xfail(
+	'sys.version_info < (3,4)',
+	reason="Doesn't work on python older than 3.4",
+)
+def test_exception_handler(loop):
+	handler_called = False
+	coro_run = False
+	loop.set_debug(True)
+
+	@asyncio.coroutine
+	def future_except():
+		nonlocal coro_run
+		coro_run = True
+		loop.stop()
+		raise ExceptionTester()
+
+	def exct_handler(loop, data):
+		nonlocal handler_called
+		handler_called = True
+
+	loop.set_exception_handler(exct_handler)
+	asyncio.async(future_except())
+	loop.run_forever()
+
+	assert coro_run
+	assert handler_called
+
+
+def test_exception_handler_simple(loop):
+	handler_called = False
+
+	def exct_handler(loop, data):
+		nonlocal handler_called
+		handler_called = True
+
+	loop.set_exception_handler(exct_handler)
+	fut1 = asyncio.Future()
+	fut1.set_exception(ExceptionTester())
+	asyncio.async(fut1)
+	del fut1
+	loop.call_later(0.1, loop.stop)
+	loop.run_forever()
+	assert handler_called

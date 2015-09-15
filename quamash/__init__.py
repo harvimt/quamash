@@ -4,7 +4,7 @@
 """Implementation of the PEP 3156 Event-Loop with Qt."""
 
 __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>'
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 __url__ = 'https://github.com/harvimt/quamash'
 __license__ = 'BSD'
 
@@ -347,10 +347,14 @@ class QEventLoop(_baseclass):
 
 	def _add_callback(self, handle, delay=0):
 		def upon_timeout():
+			nonlocal timer
+			nonlocal handle
 			assert timer in self.__timers, 'Timer {} not among {}'.format(timer, self.__timers)
 			self.__timers.remove(timer)
+			timer = None
 			self._logger.debug('Callback timer fired, calling {}'.format(handle))
 			handle._run()
+			handle = None
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
 		timer = QtCore.QTimer(self.__app)
