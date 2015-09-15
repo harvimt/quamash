@@ -70,6 +70,7 @@ class _IocpProactor(windows_events.IocpProactor):
 
 	def close(self):
 		self._logger.debug('Closing')
+		self._poll(0.2)
 		super(_IocpProactor, self).close()
 
 	def _poll(self, timeout=None):

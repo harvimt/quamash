@@ -317,14 +317,13 @@ class QEventLoop(_baseclass):
 		if self.__default_executor is not None:
 			self.__default_executor.shutdown()
 
+		super().close()
+
 		for timer in self.__timers:
 			if timer.isActive():
 				timer.stop()
 			del timer
 		self.__timers = None
-
-		super().close()
-
 
 		self.__app = None
 
