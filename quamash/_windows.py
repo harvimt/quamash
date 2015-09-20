@@ -77,9 +77,12 @@ class _IocpProactor(windows_events.IocpProactor):
 		"""Override in order to handle events in a threadsafe manner."""
 		if timeout is None:
 			ms = UINT32_MAX  # wait for eternity
-		elif timeout < 0:
-			raise ValueError("negative timeout")
 		else:
+			if not isinstance(timeout, (int, float)):
+				raise TypeError('timeout must be a number')
+			if timeout < 0:
+				raise ValueError("negative timeout")
+
 			# GetQueuedCompletionStatus() has a resolution of 1 millisecond,
 			# round away from zero to wait *at least* timeout seconds.
 			ms = math.ceil(timeout * 1e3)
@@ -89,8 +92,14 @@ class _IocpProactor(windows_events.IocpProactor):
 		while True:
 			# self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
 			# 	ms, threading.get_ident()))
+			if self._iocp is None:
+				self._logger.debug('Stopping polling since IOCP handle is disposed')
+				break
+
+			assert 0 <= ms <= UINT32_MAX
 			status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
 			if status is None:
+				self._logger.debug('Stopping polling since None was returned for status')
 				break
 
 			err, transferred, key, address = status
