@@ -37,11 +37,11 @@ function main () {
         InstallPackage $env:Python PySide
     }
     if ($env:QTIMPL -eq "PyQt4"){
-        (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.3/PyQt4-4.11.3-gpl-Py3.4-Qt4.8.6-x32.exe", "C:\install-PyQt4.exe")
+        (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.4/PyQt4-4.11.4-gpl-Py3.4-Qt4.8.7-x32.exe/download", "C:\install-PyQt4.exe")
         Start-Process -FilePath C:\install-PyQt4.exe -ArgumentList "/S" -Wait -Passthru
     }
     if ($env:QTIMPL -eq "PyQt5"){
-        (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4/PyQt5-5.4-gpl-Py3.4-Qt5.4.0-x32.exe/download", "C:\install-PyQt5.exe")
+        (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt5-5.5.1-gpl-Py3.4-Qt5.5.1-x32.exe/download", "C:\install-PyQt5.exe")
         Start-Process -FilePath C:\install-PyQt5.exe -ArgumentList "/S" -Wait -Passthru
     }
 }
