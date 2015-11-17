@@ -31,7 +31,9 @@ WORKDIR /builds/PyQt-gpl-5.4
 RUN python3.3 configure.py --confirm-license --qmake /opt/qt54/bin/qmake --no-designer-plugin -e QtCore -e QtGui -e QtWidgets --destdir=/usr/lib/python3.3/dist-packages && make && make install
 RUN python3.4 configure.py --confirm-license --qmake /opt/qt54/bin/qmake --no-designer-plugin -e QtCore -e QtGui -e QtWidgets --destdir=/usr/lib/python3.4/dist-packages && make && make install
 RUN python3.5 configure.py --confirm-license --qmake /opt/qt54/bin/qmake --no-designer-plugin -e QtCore -e QtGui -e QtWidgets --destdir=/usr/lib/python3.5/dist-packages && make && make install
+RUN python3.3 /downloads/get-pip.py
 RUN python3.4 /downloads/get-pip.py
+RUN python3.5 /downloads/get-pip.py
 RUN mkdir /quamash
 WORKDIR /quamash
 #RUN python3.4 -m pip install pytest flake8 pep8-naming flake8-debugger flake8-docstrings
