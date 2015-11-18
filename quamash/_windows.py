@@ -5,7 +5,6 @@
 """Windows specific Quamash functionality."""
 
 import asyncio
-import threading
 
 try:
 	import _winapi
@@ -60,7 +59,7 @@ class _IocpProactor(windows_events.IocpProactor):
 	def __init__(self):
 		self.__events = []
 		super(_IocpProactor, self).__init__()
-		self._lock = threading.Lock()
+		self._lock = QtCore.QMutex()
 
 	def select(self, timeout=None):
 		"""Override in order to handle events in a threadsafe manner."""
@@ -75,11 +74,11 @@ class _IocpProactor(windows_events.IocpProactor):
 		super(_IocpProactor, self).close()
 
 	def recv(self, conn, nbytes, flags=0):
-		with self._lock:
+		with QtCore.QMutexLocker(self._lock):
 			return super(_IocpProactor, self).recv(conn, nbytes, flags)
 
 	def send(self, conn, buf, flags=0):
-		with self._lock:
+		with QtCore.QMutexLocker(self._lock):
 			return super(_IocpProactor, self).send(conn, buf, flags)
 
 	def _poll(self, timeout=None):
@@ -95,7 +94,7 @@ class _IocpProactor(windows_events.IocpProactor):
 			if ms >= UINT32_MAX:
 				raise ValueError("timeout too big")
 
-		with self._lock:
+		with QtCore.QMutexLocker(self._lock):
 			while True:
 				# self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
 				# 	ms, threading.get_ident()))
@@ -123,15 +122,15 @@ class _IocpProactor(windows_events.IocpProactor):
 				ms = 0
 
 	def _wait_for_handle(self, handle, timeout, _is_cancel):
-		with self._lock:
+		with QtCore.QMutexLocker(self._lock):
 			return super(_IocpProactor, self)._wait_for_handle(handle, timeout, _is_cancel)
 
 	def accept(self, listener):
-		with self._lock:
+		with QtCore.QMutexLocker(self._lock):
 			return super(_IocpProactor, self).accept(listener)
 
 	def connect(self, conn, address):
-		with self._lock:
+		with QtCore.QMutexLocker(self._lock):
 			return super(_IocpProactor, self).connect(conn, address)
 
 
