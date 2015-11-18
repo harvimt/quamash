@@ -52,7 +52,6 @@ install:
   - popd
   # PySide
   - pip install --find-links wheelhouse/ pyside
-  - python `which pyside_postinstall.py` -install
   # Python 3.3
   - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
   # flake8 style checker
