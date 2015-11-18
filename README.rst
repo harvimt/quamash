@@ -120,6 +120,7 @@ Version 0.5.4
 -------------
 * Remove unnecessary QObjects
 * Officially add Python 3.5 support (CI configuration and setup.py change)
+* Fix `#55`
 
 Version 0.5.3
 -------------
@@ -247,3 +248,4 @@ starts with a "Q".
 .. _#31: https://github.com/harvimt/quamash/issues/31
 .. _#34: https://github.com/harvimt/quamash/issues/34
 .. _#35: https://github.com/harvimt/quamash/issues/35
+.. _#55: https://github.com/harvimt/quamash/issues/55
