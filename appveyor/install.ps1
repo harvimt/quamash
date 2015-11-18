@@ -3,7 +3,6 @@
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 # Adapted by Mark Harviston <mark.harviston@gmail.com>
 
-$BASE_URL = "https://www.python.org/ftp/python/"
 $GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 $GET_PIP_PATH = "C:\get-pip.py"
 
@@ -33,17 +32,19 @@ function main () {
     if($env:PYTHON_VERSION -match "^3.3"){
         InstallPackage $env:PYTHON asyncio
     }
-    if($env:QTIMPL -eq "PySide"){
-        InstallPackage $env:Python PySide
-    }
-    if ($env:QTIMPL -eq "PyQt4"){
-        (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.4/PyQt4-4.11.4-gpl-Py3.4-Qt4.8.7-x32.exe/download", "C:\install-PyQt4.exe")
-        Start-Process -FilePath C:\install-PyQt4.exe -ArgumentList "/S" -Wait -Passthru
-    }
-    if ($env:QTIMPL -eq "PyQt5"){
-        (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt5-5.5.1-gpl-Py3.4-Qt5.5.1-x32.exe/download", "C:\install-PyQt5.exe")
-        Start-Process -FilePath C:\install-PyQt5.exe -ArgumentList "/S" -Wait -Passthru
-    }
+	switch ($env:QTIMPL){
+		"PySide" {
+			InstallPackage $env:Python PySide
+		}
+		"PyQt4" {
+			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.4/PyQt4-4.11.4-gpl-Py3.4-Qt4.8.7-x32.exe/download", "C:\install-PyQt4.exe")
+			Start-Process -FilePath C:\install-PyQt4.exe -ArgumentList "/S" -Wait -Passthru
+		}
+		"PyQt5" {
+			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt5-5.5.1-gpl-Py3.4-Qt5.5.1-x32.exe/download", "C:\install-PyQt5.exe")
+			Start-Process -FilePath C:\install-PyQt5.exe -ArgumentList "/S" -Wait -Passthru
+		}
+	}
 }
 
 main
