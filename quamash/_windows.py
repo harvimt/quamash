@@ -5,6 +5,7 @@
 """Windows specific Quamash functionality."""
 
 import asyncio
+import threading
 
 try:
 	import _winapi
@@ -57,6 +58,7 @@ class _IocpProactor(windows_events.IocpProactor):
 	def __init__(self):
 		self.__events = []
 		super(_IocpProactor, self).__init__()
+		self._lock = threading.Lock()
 
 	def select(self, timeout=None):
 		"""Override in order to handle events in a threadsafe manner."""
@@ -69,6 +71,14 @@ class _IocpProactor(windows_events.IocpProactor):
 	def close(self):
 		self._logger.debug('Closing')
 		super(_IocpProactor, self).close()
+
+	def recv(self, conn, nbytes, flags=0):
+		with self._lock:
+			return super(_IocpProactor, self).recv(conn, nbytes, flags)
+
+	def send(self, conn, buf, flags=0):
+		with self._lock:
+			return super(_IocpProactor, self).send(conn, buf, flags)
 
 	def _poll(self, timeout=None):
 		"""Override in order to handle events in a threadsafe manner."""
@@ -83,31 +93,44 @@ class _IocpProactor(windows_events.IocpProactor):
 			if ms >= UINT32_MAX:
 				raise ValueError("timeout too big")
 
-		while True:
-			# self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
-			# 	ms, threading.get_ident()))
-			status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
-			if status is None:
-				break
+		with self._lock:
+			while True:
+				# self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
+				# 	ms, threading.get_ident()))
+				status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
+				if status is None:
+					break
 
-			err, transferred, key, address = status
-			try:
-				f, ov, obj, callback = self._cache.pop(address)
-			except KeyError:
-				# key is either zero, or it is used to return a pipe
-				# handle which should be closed to avoid a leak.
-				if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
-					_winapi.CloseHandle(key)
+				err, transferred, key, address = status
+				try:
+					f, ov, obj, callback = self._cache.pop(address)
+				except KeyError:
+					# key is either zero, or it is used to return a pipe
+					# handle which should be closed to avoid a leak.
+					if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
+						_winapi.CloseHandle(key)
+					ms = 0
+					continue
+
+				if obj in self._stopped_serving:
+					f.cancel()
+				# Futures might already be resolved or cancelled
+				elif not f.done():
+					self.__events.append((f, callback, transferred, key, ov))
+
 				ms = 0
-				continue
 
-			if obj in self._stopped_serving:
-				f.cancel()
-			# Futures might already be resolved or cancelled
-			elif not f.done():
-				self.__events.append((f, callback, transferred, key, ov))
+	def _wait_for_handle(self, handle, timeout, _is_cancel):
+		with self._lock:
+			return super(_IocpProactor, self)._wait_for_handle(handle, timeout, _is_cancel)
 
-			ms = 0
+	def accept(self, listener):
+		with self._lock:
+			return super(_IocpProactor, self).accept(listener)
+
+	def connect(self, conn, address):
+		with self._lock:
+			return super(_IocpProactor, self).connect(conn, address)
 
 
 @with_logger
