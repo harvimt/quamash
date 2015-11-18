@@ -554,6 +554,7 @@ class QEventLoop(_baseclass):
 			return
 
 		try:
+			self._logger.debug('Calling client exception handler')
 			self.__exception_handler(self, context)
 		except Exception as exc:
 			# Exception in the user set custom exception handler.
