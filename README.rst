@@ -116,6 +116,11 @@ Usage
 Changelog
 =========
 
+Version 0.5.4
+-------------
+* Remove unnecessary QObjects
+* Officially add Python 3.5 support (CI configuration and setup.py change)
+
 Version 0.5.3
 -------------
 * Fix to `#34`_
@@ -202,6 +207,27 @@ On linux, Python 3.3 and 3.4 with PySide, PyQt4, and PyQt5 are tested. On window
 PySide, PyQt4 and PyQt5 are tested, but Python 3.3 is only tested with PySide since binary installers
 for PyQt are not provided for Python 3.3 (at least not the newest versions of PyQt), and compiling 
 from source probably isn't worth it.
+
+Python 3.5 is now tested on linux with PyQt4 and PyQt5.
+
+Testing Matrix
+~~~~~~~~~~~~~~
+
++----------------------+---------+---------+--------------+----------------+
+|                      | PyQt4   | PyQt5   | PySide (Qt4) | PySide 2 (Qt5) |
++======================+=========+=========+==============+================+
+| Linux - Python 3.3   | yes     | yes     | yes          | planned        |
++----------------------+---------+---------+--------------+----------------+
+| Linux - Python 3.4   | yes     | yes     | yes          | planned        |
++----------------------+---------+---------+--------------+----------------+
+| Linux - Python 3.5   | yes     | yes     | n/a          | planned        |
++----------------------+---------+---------+--------------+----------------+
+| Windows - Python 3.3 | no      | no      | yes          | no             |
++----------------------+---------+---------+--------------+----------------+
+| Windows - Python 3.4 | yes     | yes     | yes          | planned        |
++----------------------+---------+---------+--------------+----------------+
+| Windows - Python 3.5 | planned | planned | planned      | planned        |
++----------------------+---------+---------+--------------+----------------+
 
 License
 =======
