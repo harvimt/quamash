@@ -52,7 +52,7 @@ install:
   # Builds Complete
   - popd
   # PySide
-  - pip install --find-links wheelhouse/ pyside
+  - if [ $TRAVIS_PYTHON_VERSION != '3.5' ]; then pip install --find-links wheelhouse/ pyside; fi
   # Python 3.3
   - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
   # flake8 style checker
@@ -60,7 +60,7 @@ install:
 script:
   - flake8
   - flake8 --select=D1 quamash/*.py
-  - QUAMASH_QTIMPL=PySide py.test
+  - if [ $TRAVIS_PYTHON_VERSION != '3.5']; then QUAMASH_QTIMPL=PySide py.test; fi
   - QUAMASH_QTIMPL=PyQt4 py.test
   - QUAMASH_QTIMPL=PyQt5 py.test
 cache:
