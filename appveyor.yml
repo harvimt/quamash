@@ -2,17 +2,17 @@ environment:
 
   matrix:
     - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.1"
+      PYTHON_VERSION: "3.4.3"
       PYTHON_ARCH: "32"
       QTIMPL: "PySide"
 
     - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.1"
+      PYTHON_VERSION: "3.4.3"
       PYTHON_ARCH: "32"
       QTIMPL: "PyQt4"
 
     - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.1"
+      PYTHON_VERSION: "3.4.3"
       PYTHON_ARCH: "32"
       QTIMPL: "PyQt5"
 
