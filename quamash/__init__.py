@@ -57,7 +57,6 @@ from ._common import with_logger
 
 @with_logger
 class _QThreadWorker(QtCore.QThread):
-
 	"""
 	Read from the queue.
 
@@ -105,7 +104,6 @@ class _QThreadWorker(QtCore.QThread):
 
 @with_logger
 class QThreadExecutor:
-
 	"""
 	ThreadExecutor that produces QThreads.
 
@@ -227,7 +225,6 @@ else:
 
 @with_logger
 class QEventLoop(_baseclass):
-
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
 

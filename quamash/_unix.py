@@ -40,7 +40,6 @@ def _fileobj_to_fd(fileobj):
 
 
 class _SelectorMapping(collections.Mapping):
-
 	"""Mapping of file objects to selector keys."""
 
 	def __init__(self, selector):

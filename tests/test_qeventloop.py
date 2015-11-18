@@ -88,7 +88,6 @@ ExceptionTester = type('ExceptionTester', (Exception,), {})  # to make flake8 no
 
 
 class TestCanRunTasksInExecutor:
-
 	"""
 	Test Cases Concerning running jobs in Executors.
 
