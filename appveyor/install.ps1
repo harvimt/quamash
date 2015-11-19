@@ -26,12 +26,11 @@ function InstallPackage ($python_home, $pkg) {
 }
 
 function main () {
-	$PYTHON_MAJ_VERSION = $env:PYTHON_VERSION -replace '(\d+)\.(\d+)\.(\d+)', '$1.$2'
-	& REG ADD "HKCU\Software\Python\PythonCore\${PYTHON_MAJ_VERSION}\InstallPath" /f /ve /t REG_SZ /d $env:PYTHON
+	& REG ADD "HKCU\Software\Python\PythonCore\${$env:PYTHON_VERSION}\InstallPath" /f /ve /t REG_SZ /d $env:PYTHON
 	InstallPip $env:PYTHON
 	InstallPackage $env:PYTHON wheel
 	InstallPackage $env:PYTHON pytest
-	if($PYTHON_MAJ_VERSION -eq '3.3'){
+	if($$env:PYTHON_VERSION -eq '3.3'){
 		InstallPackage $env:PYTHON asyncio
 	}
 	switch ($env:QTIMPL){
@@ -39,11 +38,11 @@ function main () {
 			InstallPackage $env:Python PySide
 		}
 		"PyQt4" {
-			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.4/PyQt4-4.11.4-gpl-Py3.4-Qt4.8.7-x32.exe/download", "C:\install-PyQt4.exe")
+			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.4/PyQt4-4.11.4-gpl-Py3.4-Qt4.8.7-x${env:PYTHON_ARCH}.exe/download", "C:\install-PyQt4.exe")
 			Start-Process -FilePath C:\install-PyQt4.exe -ArgumentList "/S" -Wait -Passthru
 		}
 		"PyQt5" {
-			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt5-5.5.1-gpl-Py3.4-Qt5.5.1-x32.exe/download", "C:\install-PyQt5.exe")
+			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt5-5.5.1-gpl-Py3.4-Qt5.5.1-x${env:PYTHON_ARCH}.exe/download", "C:\install-PyQt5.exe")
 			Start-Process -FilePath C:\install-PyQt5.exe -ArgumentList "/S" -Wait -Passthru
 		}
 	}
