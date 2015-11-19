@@ -30,7 +30,7 @@ function main () {
 	InstallPip $env:PYTHON
 	InstallPackage $env:PYTHON wheel
 	InstallPackage $env:PYTHON pytest
-	if($$env:PYTHON_VERSION -eq '3.3'){
+	if($env:PYTHON_VERSION -eq '3.3'){
 		InstallPackage $env:PYTHON asyncio
 	}
 	switch ($env:QTIMPL){
