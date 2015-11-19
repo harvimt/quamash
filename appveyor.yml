@@ -30,7 +30,7 @@ install:
 build: off
 
 test_script:
-  - "%PYTHON%\\Scripts\\py.test.exe -s"
+  - "%PYTHON%\\Scripts\\py.test.exe -sv"
 
 notifications:
   - provider: Webhook
