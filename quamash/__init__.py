@@ -310,6 +310,11 @@ class QEventLoop(_baseclass):
 
 		The loop cannot be restarted after it has been closed.
 		"""
+		if self.is_running():
+			raise RuntimeError("Cannot close a running event loop")
+		if self.is_closed():
+			return
+
 		self._logger.debug('Closing event loop...')
 		if self.__default_executor is not None:
 			self.__default_executor.shutdown()
@@ -397,6 +402,10 @@ class QEventLoop(_baseclass):
 
 	def remove_reader(self, fd):
 		"""Remove reader callback."""
+
+		if self.is_closed():
+			return
+
 		self._logger.debug('Removing reader callback for file descriptor {}'.format(fd))
 		try:
 			notifier = self._read_notifiers.pop(fd)
@@ -429,6 +438,10 @@ class QEventLoop(_baseclass):
 
 	def remove_writer(self, fd):
 		"""Remove writer callback."""
+
+		if self.is_closed():
+			return
+
 		self._logger.debug('Removing writer callback for file descriptor {}'.format(fd))
 		try:
 			notifier = self._write_notifiers.pop(fd)
