@@ -381,6 +381,8 @@ class QEventLoop(_baseclass):
 
 	def add_reader(self, fd, callback, *args):
 		"""Register a callback for when a file descriptor is ready for reading."""
+		self._check_closed()
+
 		try:
 			existing = self._read_notifiers[fd]
 		except KeyError:
@@ -417,6 +419,7 @@ class QEventLoop(_baseclass):
 
 	def add_writer(self, fd, callback, *args):
 		"""Register a callback for when a file descriptor is ready for writing."""
+		self._check_closed()
 		try:
 			existing = self._write_notifiers[fd]
 		except KeyError:
