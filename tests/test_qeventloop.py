@@ -399,24 +399,37 @@ def test_can_remove_reader(loop, sock_pair):
 
 	assert got_msg is None, 'Should not have received a read notification'
 
-def test_can_remove_reader_after_closing(loop, sock_pair):
+def test_remove_reader_after_closing(loop, sock_pair):
 	"""Verify that we can remove a reader callback from an event loop."""
-	def can_read():
-		data = srv_sock.recv(1)
-		if len(data) != 1:
-			return
-
-		nonlocal got_msg
-		got_msg = data
-
 	client_sock, srv_sock = sock_pair
 
-	got_msg = None
-	loop.add_reader(srv_sock.fileno(), can_read)
+	loop.add_reader(srv_sock.fileno(), lambda: None)
 	loop.close()
 	loop.remove_reader(srv_sock.fileno())
 
-	assert got_msg is None, 'Should not have received a read notification'
+def test_remove_writer_after_closing(loop, sock_pair):
+	"""Verify that we can remove a reader callback from an event loop."""
+	client_sock, srv_sock = sock_pair
+
+	loop.add_writer(client_sock.fileno(), lambda: None)
+	loop.close()
+	loop.remove_writer(client_sock.fileno())
+
+def test_add_reader_after_closing(loop, sock_pair):
+	"""Verify that we can remove a reader callback from an event loop."""
+	client_sock, srv_sock = sock_pair
+
+	loop.close()
+	with pytest.raises(RuntimeError):
+		loop.add_reader(srv_sock.fileno(), lambda:None)
+
+def test_add_writer_after_closing(loop, sock_pair):
+	"""Verify that we can remove a reader callback from an event loop."""
+	client_sock, srv_sock = sock_pair
+
+	loop.close()
+	with pytest.raises(RuntimeError):
+		loop.add_writer(client_sock.fileno(), lambda:None)
 
 def test_can_add_writer(loop, sock_pair):
 	"""Verify that we can add a writer callback to an event loop."""
