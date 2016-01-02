@@ -22,6 +22,7 @@ UINT32_MAX = 0xffffffff
 
 
 class _ProactorEventLoop(asyncio.ProactorEventLoop):
+
 	"""Proactor based event loop."""
 
 	def __init__(self):
@@ -166,6 +167,7 @@ class _EventWorker(QtCore.QThread):
 
 @with_logger
 class _EventPoller(QtCore.QObject):
+
 	"""Polling of events in separate thread."""
 
 	sig_events = QtCore.Signal(list)

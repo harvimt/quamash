@@ -57,8 +57,9 @@ from ._common import with_logger
 
 @with_logger
 class _QThreadWorker(QtCore.QThread):
+
 	"""
-	Read from the queue.
+	Read jobs from the queue and then execute them.
 
 	For use by the QThreadExecutor
 	"""
@@ -104,6 +105,7 @@ class _QThreadWorker(QtCore.QThread):
 
 @with_logger
 class QThreadExecutor:
+
 	"""
 	ThreadExecutor that produces QThreads.
 
@@ -225,6 +227,7 @@ else:
 
 @with_logger
 class QEventLoop(_baseclass):
+
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
 
@@ -404,7 +407,6 @@ class QEventLoop(_baseclass):
 
 	def remove_reader(self, fd):
 		"""Remove reader callback."""
-
 		if self.is_closed():
 			return
 
@@ -441,7 +443,6 @@ class QEventLoop(_baseclass):
 
 	def remove_writer(self, fd):
 		"""Remove writer callback."""
-
 		if self.is_closed():
 			return
 

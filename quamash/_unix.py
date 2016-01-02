@@ -16,7 +16,8 @@ EVENT_WRITE = (1 << 1)
 
 
 def _fileobj_to_fd(fileobj):
-	"""Return a file descriptor from a file object.
+	"""
+	Return a file descriptor from a file object.
 
 	Parameters:
 	fileobj -- file object or file descriptor
@@ -32,14 +33,15 @@ def _fileobj_to_fd(fileobj):
 	else:
 		try:
 			fd = int(fileobj.fileno())
-		except (AttributeError, TypeError, ValueError):
-			raise ValueError("Invalid file object: {!r}".format(fileobj)) from None
+		except (AttributeError, TypeError, ValueError) as ex:
+			raise ValueError("Invalid file object: {!r}".format(fileobj)) from ex
 	if fd < 0:
 		raise ValueError("Invalid file descriptor: {}".format(fd))
 	return fd
 
 
 class _SelectorMapping(collections.Mapping):
+
 	"""Mapping of file objects to selector keys."""
 
 	def __init__(self, selector):
@@ -170,7 +172,8 @@ class _Selector(selectors.BaseSelector):
 		return self.__map
 
 	def _key_from_fd(self, fd):
-		"""Return the key associated to a given file descriptor.
+		"""
+		Return the key associated to a given file descriptor.
 
 		Parameters:
 		fd -- file descriptor
