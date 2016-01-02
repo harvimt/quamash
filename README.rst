@@ -120,7 +120,9 @@ Version 0.5.4
 -------------
 * Remove unnecessary QObjects
 * Officially add Python 3.5 support (CI configuration and setup.py change)
-* Fix `#55`
+* Fix `#55`_
+* Better compatibility with behavior of default event loop (`#59`_)
+* Remove _easycallback and replace with _makeSignaller
 
 Version 0.5.3
 -------------
@@ -249,3 +251,4 @@ starts with a "Q".
 .. _#34: https://github.com/harvimt/quamash/issues/34
 .. _#35: https://github.com/harvimt/quamash/issues/35
 .. _#55: https://github.com/harvimt/quamash/issues/55
+.. _#59: https://github.com/harvimt/quamash/pull/59
