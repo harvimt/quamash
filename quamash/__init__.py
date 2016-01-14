@@ -171,7 +171,7 @@ def _make_signaller(qtimpl_qtcore, *args):
 
 
 @with_logger
-class _QEventLoop(asyncio.BaseEventLoop):
+class _QEventLoop(asyncio._BaseEventLoop):
 
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
@@ -561,16 +561,15 @@ class _QEventLoop(asyncio.BaseEventLoop):
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
 
 from .unix import _SelectorEventLoop
-class QSelectorEventLoop(_QEventLoop, _SelectorEventLoop):
-	pass
+QSelectorEventLoop = type('QSelectorEventLoop', (_QEventLoop, _SelectorEventLoop), {})
 
 if os.name == 'nt':
 	from ._windows import _ProactorEventLoop
-	class QIOCPEventLoop(_QEventLoop, _ProactorEventLoop):
-		pass
+	QIOCPEventLoop = type('QSelectorEventLoop', (_QEventLoop, _ProactorEventLoop), {})
 	QEventLoop = QIOCPEventLoop
 else:
 	QEventLoop = QSelectorEventLoop
+
 
 class _Cancellable:
 	def __init__(self, timer, loop):
