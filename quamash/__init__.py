@@ -585,7 +585,7 @@ class _QEventLoop(asyncio._BaseEventLoop):
 		except:
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
 
-from .unix import _SelectorEventLoop
+from ._unix import _SelectorEventLoop
 QSelectorEventLoop = type('QSelectorEventLoop', (_QEventLoop, _SelectorEventLoop), {})
 
 if os.name == 'nt':
