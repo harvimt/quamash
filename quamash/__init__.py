@@ -171,7 +171,7 @@ def _make_signaller(qtimpl_qtcore, *args):
 
 
 @with_logger
-class _QEventLoop(asyncio._BaseEventLoop):
+class _QEventLoop(asyncio.BaseEventLoop):
 
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
