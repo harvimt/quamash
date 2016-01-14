@@ -195,7 +195,7 @@ class _SimpleTimer(QtCore.QObject):
 
 
 @with_logger
-class _QEventLoop(asyncio.BaseEventLoop):
+class _QEventLoop:
 
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
