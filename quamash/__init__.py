@@ -171,14 +171,6 @@ def _make_signaller(qtimpl_qtcore, *args):
 	return Signaller()
 
 
-if os.name == 'nt':
-	from . import _windows
-	_baseclass = _windows.baseclass
-else:
-	from . import _unix
-	_baseclass = _unix.baseclass
-
-
 class _SimpleTimer(QtCore.QObject):
 	def __init__(self, timeout, callback):
 		super().__init__()
@@ -307,8 +299,9 @@ class QEventLoop(_baseclass):
 		super().close()
 
 		for timer in self.__timers:
-			timer.stop()
-
+			if timer.isActive():
+				timer.stop()
+			del timer
 		self.__timers = None
 
 		self.__app = None
@@ -335,20 +328,21 @@ class QEventLoop(_baseclass):
 		def upon_timeout():
 			nonlocal timer
 			nonlocal handle
-			if timer in self.__timers:
-				self.__timers.remove(timer)
-			else:
-				self._logger.warn('Timer {} not among {}'.format(timer, self.__timers))
+			assert timer in self.__timers, 'Timer {} not among {}'.format(timer, self.__timers)
+			self.__timers.remove(timer)
 			timer = None
 			self._logger.debug('Callback timer fired, calling {}'.format(handle))
 			handle._run()
 			handle = None
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
-		timer = _SimpleTimer(delay * 1000, upon_timeout)
+		timer = QtCore.QTimer(self.__app)
+		timer.timeout.connect(upon_timeout)
+		timer.setSingleShot(True)
+		timer.start(delay * 1000)
 		self.__timers.append(timer)
 
-		return timer
+		return _Cancellable(timer, self)
 
 	def call_soon(self, callback, *args):
 		"""Register a callback to be run on the next iteration of the event loop."""
@@ -510,9 +504,7 @@ class QEventLoop(_baseclass):
 		self.__exception_handler = handler
 
 	def default_exception_handler(self, context):
-		"""Handle exceptions.
-
-		This is the default exception handler.
+		"""Default exception handler.
 
 		This is called when an exception occurs and no exception
 		handler is set, and can be called by a custom exception
@@ -592,3 +584,23 @@ class QEventLoop(_baseclass):
 			cls._logger.error(*args, **kwds)
 		except:
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
+
+from .unix import _SelectorEventLoop
+class QSelectorEventLoop(_QEventLoop, _SelectorEventLoop):
+	pass
+
+if os.name == 'nt':
+	from ._windows import _ProactorEventLoop
+	class QIOCPEventLoop(_QEventLoop, _ProactorEventLoop):
+		pass
+	QEventLoop = QIOCPEventLoop
+else:
+	QEventLoop = QSelectorEventLoop
+
+class _Cancellable:
+	def __init__(self, timer, loop):
+		self.__timer = timer
+		self.__loop = loop
+
+	def cancel(self):
+		self.__timer.stop()
