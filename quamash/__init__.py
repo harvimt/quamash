@@ -177,6 +177,29 @@ else:
 	_baseclass = _unix.baseclass
 
 
+class _SimpleTimer(QtCore.QObject):
+	def __init__(self, timeout, callback):
+		super().__init__()
+		self.callback = callback
+		self.timer_id = self.startTimer(timeout)
+		self.stopped = False
+
+	def timerEvent(self, event):  # noqa
+		assert self.timer_id == event.timerId()
+		if self.stopped:
+			self.killTimer(self.timer_id)
+		elif event.timerId() == self.timer_id:
+			self.callback()
+			self.killTimer(self.timer_id)
+			self.stopped = True
+
+	def stop(self):
+		self.stopped = True
+
+	def cancel(self):
+		self.stopped = True
+
+
 @with_logger
 class QEventLoop(_baseclass):
 
@@ -281,9 +304,8 @@ class QEventLoop(_baseclass):
 		super().close()
 
 		for timer in self.__timers:
-			if timer.isActive():
-				timer.stop()
-			del timer
+			timer.stop()
+
 		self.__timers = None
 
 		self.__app = None
@@ -310,21 +332,20 @@ class QEventLoop(_baseclass):
 		def upon_timeout():
 			nonlocal timer
 			nonlocal handle
-			assert timer in self.__timers, 'Timer {} not among {}'.format(timer, self.__timers)
-			self.__timers.remove(timer)
+			if timer in self.__timers:
+				self.__timers.remove(timer)
+			else:
+				self._logger.warn('Timer {} not among {}'.format(timer, self.__timers))
 			timer = None
 			self._logger.debug('Callback timer fired, calling {}'.format(handle))
 			handle._run()
 			handle = None
 
 		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
-		timer = QtCore.QTimer(self.__app)
-		timer.timeout.connect(upon_timeout)
-		timer.setSingleShot(True)
-		timer.start(delay * 1000)
+		timer = _SimpleTimer(delay * 1000, upon_timeout)
 		self.__timers.append(timer)
 
-		return _Cancellable(timer, self)
+		return timer
 
 	def call_soon(self, callback, *args):
 		"""Register a callback to be run on the next iteration of the event loop."""
@@ -566,12 +587,3 @@ class QEventLoop(_baseclass):
 			cls._logger.error(*args, **kwds)
 		except:
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
-
-
-class _Cancellable:
-	def __init__(self, timer, loop):
-		self.__timer = timer
-		self.__loop = loop
-
-	def cancel(self):
-		self.__timer.stop()
