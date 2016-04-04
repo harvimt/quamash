@@ -116,6 +116,10 @@ Usage
 Changelog
 =========
 
+Version 0.5.5
+-------------
+* Fix `#62`_ a serious memory leak by switching from ``QTimer`` to ``QObject.timerEvent``.
+
 Version 0.5.4
 -------------
 * Remove unnecessary QObjects
@@ -252,3 +256,4 @@ starts with a "Q".
 .. _#35: https://github.com/harvimt/quamash/issues/35
 .. _#55: https://github.com/harvimt/quamash/issues/55
 .. _#59: https://github.com/harvimt/quamash/pull/59
+.. _#62: https://github.com/harvimt/quamash/pull/62
