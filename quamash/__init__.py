@@ -169,13 +169,6 @@ def _make_signaller(qtimpl_qtcore, *args):
 			signal = qtimpl_qtcore.pyqtSignal(*args)
 	return Signaller()
 
-if os.name == 'nt':
-	from . import _windows
-	_baseclass = _windows.baseclass
-else:
-	from . import _unix
-	_baseclass = _unix.baseclass
-
 
 class _SimpleTimer(QtCore.QObject):
 	def __init__(self, timeout, callback):
@@ -201,7 +194,7 @@ class _SimpleTimer(QtCore.QObject):
 
 
 @with_logger
-class QEventLoop(_baseclass):
+class _QEventLoop:
 
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
@@ -587,3 +580,13 @@ class QEventLoop(_baseclass):
 			cls._logger.error(*args, **kwds)
 		except:
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
+
+from ._unix import _SelectorEventLoop
+QSelectorEventLoop = type('QSelectorEventLoop', (_QEventLoop, _SelectorEventLoop), {})
+
+if os.name == 'nt':
+	from ._windows import _ProactorEventLoop
+	QIOCPEventLoop = type('QSelectorEventLoop', (_QEventLoop, _ProactorEventLoop), {})
+	QEventLoop = QIOCPEventLoop
+else:
+	QEventLoop = QSelectorEventLoop

@@ -216,5 +216,3 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 			else:
 				self._logger.debug('Invoking writer callback: {}'.format(writer))
 				writer._run()
-
-baseclass = _SelectorEventLoop
