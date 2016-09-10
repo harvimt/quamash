@@ -190,9 +190,9 @@ class _SimpleTimer(QtCore.QObject):
 
 	def timerEvent(self, event):  # noqa
 		timerid = event.timerId()
-		self._logger.debug("Timer event on id {0}".format(timerid))
+		#self._logger.debug("Timer event on id {0}".format(timerid))
 		if self._stopped:
-			self._logger.debug("Timer stopped, killing {}".format(timerid))
+			#self._logger.debug("Timer stopped, killing {}".format(timerid))
 			self.__callbacks.pop(timerid)
 			self.killTimer(timerid)
 		else:
@@ -201,11 +201,13 @@ class _SimpleTimer(QtCore.QObject):
 			except KeyError as e :
 				self._logger.debug(str(e))
 				pass
-			if handle._cancelled:
-				self._logger.debug("Handle {} cancelled".format(handle))
 			else:
-				self._logger.debug("Calling handle {}".format(handle))
-				handle._run()
+				if handle._cancelled:
+					pass
+					#self._logger.debug("Handle {} cancelled".format(handle))
+				else:
+					#self._logger.debug("Calling handle {}".format(handle))
+					handle._run()
 			self.killTimer(timerid)
 
 	def stop(self):
