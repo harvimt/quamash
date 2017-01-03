@@ -98,7 +98,7 @@ Usage
             await loop.run_in_executor(exec, last_50)
         # TODO announce completion?
 
-    await def first_50():
+    async def first_50():
         for i in range(50):
             progress.setValue(i)
             await asyncio.sleep(.1)
