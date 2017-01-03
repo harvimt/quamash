@@ -92,18 +92,16 @@ Usage
     progress.setRange(0, 99)
     progress.show()
 
-    @asyncio.coroutine
-    def master():
-        yield from first_50()
+    async def master():
+        await first_50()
         with QThreadExecutor(1) as exec:
-            yield from loop.run_in_executor(exec, last_50)
+            await loop.run_in_executor(exec, last_50)
         # TODO announce completion?
 
-    @asyncio.coroutine
-    def first_50():
+    await def first_50():
         for i in range(50):
             progress.setValue(i)
-            yield from asyncio.sleep(.1)
+            await asyncio.sleep(.1)
 
     def last_50():
         for i in range(50,100):
