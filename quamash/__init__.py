@@ -508,7 +508,9 @@ class QEventLoop(_baseclass):
 		self.__exception_handler = handler
 
 	def default_exception_handler(self, context):
-		"""The default exception handler.
+		"""Handle exceptions.
+
+		This is the default exception handler.
 
 		This is called when an exception occurs and no exception
 		handler is set, and can be called by a custom exception
