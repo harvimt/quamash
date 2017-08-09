@@ -169,6 +169,7 @@ def _make_signaller(qtimpl_qtcore, *args):
 			signal = qtimpl_qtcore.pyqtSignal(*args)
 	return Signaller()
 
+
 if os.name == 'nt':
 	from . import _windows
 	_baseclass = _windows.baseclass
