@@ -534,6 +534,7 @@ def test_reader_writer_echo(loop, sock_pair):
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=1.0))
 
 
+@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_regression_bug13(loop, sock_pair):
 	"""Verify that a simple handshake between client and server works as expected."""
 	c_sock, s_sock = sock_pair

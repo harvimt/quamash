@@ -169,6 +169,7 @@ def _make_signaller(qtimpl_qtcore, *args):
 			signal = qtimpl_qtcore.pyqtSignal(*args)
 	return Signaller()
 
+
 if os.name == 'nt':
 	from . import _windows
 	_baseclass = _windows.baseclass
@@ -507,7 +508,9 @@ class QEventLoop(_baseclass):
 		self.__exception_handler = handler
 
 	def default_exception_handler(self, context):
-		"""Default exception handler.
+		"""Handle exceptions.
+
+		This is the default exception handler.
 
 		This is called when an exception occurs and no exception
 		handler is set, and can be called by a custom exception

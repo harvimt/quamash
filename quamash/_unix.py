@@ -27,6 +27,7 @@ def _fileobj_to_fd(fileobj):
 
 	Raises:
 	ValueError if the object is invalid
+
 	"""
 	if isinstance(fileobj, int):
 		fd = fileobj
@@ -180,6 +181,7 @@ class _Selector(selectors.BaseSelector):
 
 		Returns:
 		corresponding key, or None if not found
+
 		"""
 		try:
 			return self._fd_to_key[fd]
@@ -216,5 +218,6 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
 			else:
 				self._logger.debug('Invoking writer callback: {}'.format(writer))
 				writer._run()
+
 
 baseclass = _SelectorEventLoop
