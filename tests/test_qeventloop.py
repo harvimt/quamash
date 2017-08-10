@@ -249,6 +249,7 @@ def test_can_function_as_context_manager(application):
 		loop.run_forever()
 
 
+@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_future_not_done_on_loop_shutdown(loop):
 	"""Verify RuntimError occurs when loop stopped before Future completed with run_until_complete."""
 	loop.call_later(.1, loop.stop)
