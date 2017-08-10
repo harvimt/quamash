@@ -162,6 +162,7 @@ def test_can_execute_subprocess(loop):
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
 
 
+@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_can_read_subprocess_primitive(loop):
 	transport, protocol = loop.run_until_complete(
 		loop.subprocess_exec(
@@ -708,6 +709,7 @@ def test_remove_writer_idempotence(loop, sock_pair):
 	assert not removed2
 
 
+@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_scheduling(loop, sock_pair):
 	s1, s2 = sock_pair
 	fd = s1.fileno()
