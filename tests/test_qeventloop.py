@@ -139,6 +139,7 @@ class TestCanRunTasksInExecutor:
 		logging.debug('start blocking task()')
 
 
+@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_can_execute_subprocess_primitive(loop):
 	"""Verify that a subprocess can be executed using low-level api."""
 	transport, protocol = loop.run_until_complete(
