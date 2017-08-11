@@ -161,7 +161,6 @@ def test_can_execute_subprocess(loop):
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
 
 
-@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_can_read_subprocess_primitive(loop):
 	transport, protocol = loop.run_until_complete(
 		loop.subprocess_exec(
@@ -248,7 +247,6 @@ def test_can_function_as_context_manager(application):
 		loop.run_forever()
 
 
-@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_future_not_done_on_loop_shutdown(loop):
 	"""Verify RuntimError occurs when loop stopped before Future completed with run_until_complete."""
 	loop.call_later(.1, loop.stop)
@@ -588,7 +586,6 @@ def test_regression_bug13(loop, sock_pair):
 	assert result3 == b'3'
 
 
-@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_add_reader_replace(loop, sock_pair):
 	c_sock, s_sock = sock_pair
 	callback_invoked = asyncio.Future()
@@ -639,7 +636,6 @@ def test_add_reader_replace(loop, sock_pair):
 	assert called2
 
 
-@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_add_writer_replace(loop, sock_pair):
 	c_sock, s_sock = sock_pair
 	callback_invoked = asyncio.Future()
@@ -708,7 +704,6 @@ def test_remove_writer_idempotence(loop, sock_pair):
 	assert not removed2
 
 
-@pytest.mark.skipif(os.environ.get('APPVEYOR') == 'True', reason="Fails on Windows.")
 def test_scheduling(loop, sock_pair):
 	s1, s2 = sock_pair
 	fd = s1.fileno()
