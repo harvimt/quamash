@@ -3,6 +3,7 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
+  - "3.6"
 before_install:
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
@@ -52,7 +53,7 @@ install:
   # Builds Complete
   - popd
   # PySide
-  - if [ $TRAVIS_PYTHON_VERSION != '3.5' ]; then pip install --find-links wheelhouse/ pyside; fi
+  - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then pip install --find-links wheelhouse/ pyside; fi
   # Python 3.3
   - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
   # flake8 style checker
@@ -60,7 +61,7 @@ install:
 script:
   - flake8
   - flake8 --select=D1 quamash/*.py
-  - if [ $TRAVIS_PYTHON_VERSION != '3.5']; then QUAMASH_QTIMPL=PySide py.test; fi
+  - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then QUAMASH_QTIMPL=PySide py.test; fi
   - QUAMASH_QTIMPL=PyQt4 py.test
   - QUAMASH_QTIMPL=PyQt5 py.test
 cache:
