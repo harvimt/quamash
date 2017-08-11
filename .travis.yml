@@ -23,9 +23,9 @@ install:
   # Qt4
   - sudo apt-get install -y libqt4-dev
   # Qt5
-  - sudo add-apt-repository -y ppa:beineri/opt-qt542
+  - sudo add-apt-repository -y ppa:beineri/opt-qt551-trusty
   - sudo apt-get update
-  - sudo apt-get install -y qt54base
+  - sudo apt-get install -y qt55base
   # Builds
   - pushd /builds
   # SIP
@@ -43,9 +43,9 @@ install:
   - sudo make install
   - popd
   # PyQt5
-  - source /opt/qt54/bin/qt54-env.sh  # switch to Qt5
+  - source /opt/qt55/bin/qt55-env.sh  # switch to Qt5
   - tar xzf /downloads/pyqt5.tar.gz --keep-newer-files
-  - pushd PyQt-gpl-5.4
+  - pushd PyQt-gpl-5.5
   - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets
   - make
   - sudo make install
