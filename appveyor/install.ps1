@@ -32,7 +32,6 @@ function main () {
 	InstallPackage $env:PYTHON wheel
 	InstallPackage $env:PYTHON pytest
 	InstallPackage $env:PYTHON pytest-timeout
-	InstallPackage $env:PYTHON pytest-xdist
 	if($PYTHON_MAJ_VERSION -eq '3.3'){
 		InstallPackage $env:PYTHON asyncio
 	}
