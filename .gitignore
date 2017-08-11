@@ -40,3 +40,6 @@ htmlcov/
 
 # IDEA
 /.idea/
+
+# VSCode
+.vscode
