@@ -56,7 +56,7 @@ install:
   # Python 3.3
   - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
   # flake8 style checker
-  - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout
+  - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout pytest-xdist
 script:
   - flake8
   - flake8 --select=D1 quamash/*.py
