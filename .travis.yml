@@ -45,6 +45,7 @@ install:
   # PyQt5
   - source /opt/qt55/bin/qt55-env.sh  # switch to Qt5
   - tar xzf /downloads/pyqt5.tar.gz --keep-newer-files
+  - ls -l
   - pushd PyQt-gpl-5.5
   - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets
   - make
