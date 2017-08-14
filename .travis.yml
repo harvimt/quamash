@@ -1,6 +1,5 @@
 language: python
 python:
-  - "3.3"
   - "3.4"
   - "3.5"
   - "3.6"
@@ -55,8 +54,6 @@ install:
   - popd
   # PySide
   - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then pip install --find-links wheelhouse/ pyside; fi
-  # Python 3.3
-  - if echo $TRAVIS_PYTHON_VERSION | grep -q '^3.3'; then pip install asyncio; fi
   # flake8 style checker
   - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout
 script:
