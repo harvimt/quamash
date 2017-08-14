@@ -10,17 +10,18 @@ before_install:
   # Cached Downloads
   - sudo mkdir -p /downloads
   - sudo chmod a+rw /downloads
-  - if [ ! -f /downloads/sip.tar.gz ];   then curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.5/sip-4.16.5.tar.gz; fi
-  - if [ ! -f /downloads/pyqt4.tar.gz ]; then curl -L -o /downloads/pyqt4.tar.gz http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.3/PyQt-x11-gpl-4.11.3.tar.gz; fi
+  - if [ ! -f /downloads/sip.tar.gz ];   then curl -L -o /downloads/sip.tar.gz https://sourceforge.net/projects/pyqt/files/sip/sip-4.19.3/sip-4.19.3.tar.gz; fi
+  - if [ ! -f /downloads/pyqt4.tar.gz ]; then curl -L -o /downloads/pyqt4.tar.gz https://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.12.1/PyQt4_gpl_x11-4.12.1.tar.gz; fi
   - if [ ! -f /downloads/pyqt5.tar.gz ]; then curl -L -o /downloads/pyqt5.tar.gz https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.9/PyQt5_gpl-5.9.tar.gz; fi
-  - echo '6d01ea966a53e4c7ae5c5e48c40e49e5  /downloads/sip.tar.gz' | md5sum -c -
-  - echo '997c3e443165a89a559e0d96b061bf70  /downloads/pyqt4.tar.gz' | md5sum -c -
+  - echo '4708187f74a4188cb4e294060707106f  /downloads/sip.tar.gz' | md5sum -c -
+  - echo '0112e15858cd7d318a09e7366922f874  /downloads/pyqt4.tar.gz' | md5sum -c -
   - echo 'a409ac0d65ead9178b90c2822759a84b  /downloads/pyqt5.tar.gz' | md5sum -c -
   # Builds
   - sudo mkdir -p /builds
   - sudo chmod a+rw /builds
 install:
   # Qt4
+  - sudo apt-get update
   - sudo apt-get install -y libqt4-dev
   # Qt5
   - sudo add-apt-repository -y ppa:beineri/opt-qt59-trusty
@@ -30,14 +31,14 @@ install:
   - pushd /builds
   # SIP
   - tar xzf /downloads/sip.tar.gz --keep-newer-files
-  - pushd sip-4.16.5
+  - pushd sip-4.19.3
   - python configure.py
   - make
   - sudo make install
   - popd
   # PyQt4
   - tar xzf /downloads/pyqt4.tar.gz --keep-newer-files
-  - pushd PyQt-x11-gpl-4.11.3
+  - pushd PyQt4_gpl_x11-4.12.1
   - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui
   - make
   - sudo make install
