@@ -7,6 +7,7 @@ __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knud
 __version__ = '0.5.5'
 __url__ = 'https://github.com/harvimt/quamash'
 __license__ = 'BSD'
+__all__ = ['QEventLoop', 'QThreadExecutor']
 
 import sys
 import os
