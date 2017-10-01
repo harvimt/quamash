@@ -282,6 +282,7 @@ class QEventLoop(_baseclass):
 
 		self._logger.debug('Stopping event loop...')
 		self.__app.exit()
+		self.__is_running = False
 		self._logger.debug('Stopped event loop')
 
 	def is_running(self):
