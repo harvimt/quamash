@@ -190,24 +190,26 @@ class _SimpleTimer(QtCore.QObject):
 
 	def timerEvent(self, event):  # noqa
 		timerid = event.timerId()
-		#self._logger.debug("Timer event on id {0}".format(timerid))
+		self._logger.debug("Timer event on id {0}".format(timerid))
 		if self._stopped:
-			#self._logger.debug("Timer stopped, killing {}".format(timerid))
-			self.__callbacks.pop(timerid)
+			self._logger.debug("Timer stopped, killing {}".format(timerid))
 			self.killTimer(timerid)
+			del self.__callbacks[timerid]
 		else:
 			try:
-				handle = self.__callbacks.pop(timerid)
+				handle = self.__callbacks[timerid]
 			except KeyError as e :
 				self._logger.debug(str(e))
 				pass
 			else:
 				if handle._cancelled:
-					pass
-					#self._logger.debug("Handle {} cancelled".format(handle))
+					self._logger.debug("Handle {} cancelled".format(handle))
 				else:
-					#self._logger.debug("Calling handle {}".format(handle))
+					self._logger.debug("Calling handle {}".format(handle))
 					handle._run()
+			finally:
+				del self.__callbacks[timerid]
+				handle = None
 			self.killTimer(timerid)
 
 	def stop(self):
@@ -341,7 +343,10 @@ class _QEventLoop:
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
-		return self._timer.add_callback(asyncio.Handle(callback, args, self), delay)
+		return self._add_callback(asyncio.Handle(callback, args, self), delay)
+
+	def _add_callback(self, handle, delay=0):
+		return self._timer.add_callback(handle, delay)
 
 	def call_soon(self, callback, *args):
 		"""Register a callback to be run on the next iteration of the event loop."""
