@@ -302,6 +302,7 @@ class QEventLoop(_baseclass):
 			return
 
 		self._logger.debug('Stopping event loop...')
+		self.__is_running = False
 		self.__app.exit()
 		self._logger.debug('Stopped event loop')
 

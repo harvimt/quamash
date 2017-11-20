@@ -727,3 +727,15 @@ def test_exception_handler_simple(loop):
 	loop.call_later(0.1, loop.stop)
 	loop.run_forever()
 	assert handler_called
+
+
+def test_not_running_immediately_after_stopped(loop):
+	@asyncio.coroutine
+	def mycoro():
+		assert loop.is_running()
+		yield from asyncio.sleep(0)
+		loop.stop()
+		assert not loop.is_running()
+	assert not loop.is_running()
+	loop.run_until_complete(mycoro())
+	assert not loop.is_running()
