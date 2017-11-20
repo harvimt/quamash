@@ -166,18 +166,14 @@ def test_can_communicate_subprocess(loop):
 def test_can_terminate_subprocess(loop):
 	"""Verify that a subprocess can be terminated."""
 	# Start a never-ending process
-	transport = loop.run_until_complete(
-		loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'import time\nwhile True: time.sleep(1)',
-		),
-	)[0]
-	# Terminate!
-	transport.kill()
-	# Wait for process to die
-	loop.run_forever()
-
-	assert transport.get_returncode() != 0
-
+	@asyncio.coroutine
+	def mycoro():
+		process = yield from asyncio.create_subprocess_exec(
+			sys.executable or 'python', '-c',  'import time\nwhile True: time.sleep(1)')
+		process.terminate()
+		yield from process.wait()
+		assert process.returncode != 0
+	loop.run_until_complete(mycoro())
 
 @pytest.mark.raises(ExceptionTester)
 def test_loop_callback_exceptions_bubble_up(loop):
