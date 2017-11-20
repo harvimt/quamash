@@ -18,6 +18,7 @@ develop-eggs
 lib
 lib64
 .coverage*
+*.env
 
 # Installer logs
 pip-log.txt
