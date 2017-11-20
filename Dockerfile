@@ -1,5 +1,6 @@
 FROM ubuntu:14.04
 RUN apt-get update -y && apt-get install -y curl build-essential software-properties-common python-software-properties
+
 RUN \
   sudo mkdir -p /downloads && \
   sudo chmod a+rw /downloads && \
@@ -20,22 +21,21 @@ RUN \
   sudo add-apt-repository -y ppa:deadsnakes/ppa && \
   sudo apt-get update && \
   sudo apt-get install -y qt59base python3.4-dev python3.5-dev python3.6-dev
+SHELL ["/bin/bash", "-c"]
 RUN \
-  for python in python34 python35 python36; do \
+  for python in python3.4 python3.5 python3.6; do \
     cd /builds/sip-4.19.3 && \
     $python configure.py && \
-    make && \
-    sudo make install && \
-    cd /builds && \
+    make clean && make && make install && \
     cd /builds/PyQt4_gpl_x11-4.12.1 && \
     $python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui && \
-    make && \
-    sudo make install && \
-    cd /builds && \
-    source /opt/qt59/bin/qt59-env.sh && \
+    make clean && make && make install && \
     cd /builds/PyQt5_gpl-5.9 && \
+    ( \
+    . /opt/qt59/bin/qt59-env.sh && \
     $python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets && \
-    make && \
-    sudo make install
+    make clean && make && make install; \
+    ) \
+  done
 ADD . /quamash
 WORKDIR /quamash
