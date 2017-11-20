@@ -52,6 +52,9 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 		self.__event_poller.stop()
 
 
+baseclass = _ProactorEventLoop
+
+
 @with_logger
 class _IocpProactor(windows_events.IocpProactor):
 	def __init__(self):
