@@ -78,7 +78,7 @@ class _QThreadWorker(QtCore.QThread):
 			future, callback, args, kwargs = command
 			self._logger.debug(
 				'#{} got callback {} with args {} and kwargs {} from queue'
-				.format(self.__num, callback, args, kwargs)
+				.format(self.__num, callback, args, kwargs),
 			)
 			if future.set_running_or_notify_cancel():
 				self._logger.debug('Invoking callback')
@@ -178,25 +178,22 @@ else:
 	from . import _unix
 	_baseclass = _unix.baseclass
 
+
 @with_logger
 class _SimpleTimer(QtCore.QObject):
-	#__slots__ = 'callback', 'timer_id', 'stopped'
 	def __init__(self):
 		super().__init__()
 		self.__callbacks = {}
 		self._stopped = False
 
 	def add_callback(self, handle, delay=0):
-		#self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
-		#timer = _SimpleTimer(delay * 1000, upon_timeout)
-		#self.__timers.append(timer)
 		timerid = self.startTimer(delay * 1000)
 		self._logger.debug("Registering timer id {0}".format(timerid))
 		assert timerid not in self.__callbacks
 		self.__callbacks[timerid] = handle
 		return handle
 
-	def timerEvent(self, event):  # noqa
+	def timerEvent(self, event):
 		timerid = event.timerId()
 		self._logger.debug("Timer event on id {0}".format(timerid))
 		if self._stopped:
@@ -206,7 +203,7 @@ class _SimpleTimer(QtCore.QObject):
 		else:
 			try:
 				handle = self.__callbacks[timerid]
-			except KeyError as e :
+			except KeyError as e:
 				self._logger.debug(str(e))
 				pass
 			else:
@@ -387,7 +384,7 @@ class QEventLoop(_baseclass):
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
 			lambda: self.__on_notifier_ready(
-				self._read_notifiers, notifier, fd, callback, args)
+				self._read_notifiers, notifier, fd, callback, args)  # noqa: C812
 		)
 		self._read_notifiers[fd] = notifier
 
@@ -423,7 +420,7 @@ class QEventLoop(_baseclass):
 		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
 			lambda: self.__on_notifier_ready(
-				self._write_notifiers, notifier, fd, callback, args)
+				self._write_notifiers, notifier, fd, callback, args)  # noqa: C812
 		)
 		self._write_notifiers[fd] = notifier
 
@@ -461,7 +458,7 @@ class QEventLoop(_baseclass):
 		if fd not in notifiers:
 			self._logger.warning(
 				'Socket notifier for fd {} is ready, even though it should be disabled, not calling {} and disabling'
-				.format(fd, callback)
+				.format(fd, callback),
 			)
 			notifier.setEnabled(False)
 			return
@@ -596,5 +593,5 @@ class QEventLoop(_baseclass):
 		# In some cases, the error method itself fails, don't have a lot of options in that case
 		try:
 			cls._logger.error(*args, **kwds)
-		except:
+		except: # noqa E722
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))

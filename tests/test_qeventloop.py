@@ -2,7 +2,6 @@
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
 import asyncio
-import locale
 import logging
 import sys
 import os
@@ -58,7 +57,7 @@ def loop(request, application):
 
 
 @pytest.fixture(
-	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor]
+	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor],
 )
 def executor(request):
 	exc_cls = request.param
@@ -169,11 +168,12 @@ def test_can_terminate_subprocess(loop):
 	@asyncio.coroutine
 	def mycoro():
 		process = yield from asyncio.create_subprocess_exec(
-			sys.executable or 'python', '-c',  'import time\nwhile True: time.sleep(1)')
+			sys.executable or 'python', '-c', 'import time\nwhile True: time.sleep(1)')
 		process.terminate()
 		yield from process.wait()
 		assert process.returncode != 0
 	loop.run_until_complete(mycoro())
+
 
 @pytest.mark.raises(ExceptionTester)
 def test_loop_callback_exceptions_bubble_up(loop):
@@ -671,9 +671,7 @@ def test_scheduling(loop, sock_pair):
 
 	def writer_cb(fut):
 		if fut.done():
-			cb_called.set_exception(
-				ValueError("writer_cb called twice")
-			)
+			cb_called.set_exception(ValueError("writer_cb called twice"))
 		fut.set_result(None)
 
 	def fut_cb(fut):

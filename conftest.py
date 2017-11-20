@@ -7,20 +7,20 @@ sys.path.insert(0, os.path.dirname(__file__))
 try:
 	import colorlog
 	handler = colorlog.StreamHandler()
-	
+
 	formatter = colorlog.ColoredFormatter(
 		"%(log_color)s%(levelname)-8s%(reset)s %(name)-32s %(message)s",
 		datefmt=None,
 		reset=True,
 		log_colors={
-			'DEBUG':    'cyan',
-			'INFO':     'green',
-			'WARNING':  'yellow',
-			'ERROR':    'red',
+			'DEBUG': 'cyan',
+			'INFO': 'green',
+			'WARNING': 'yellow',
+			'ERROR': 'red',
 			'CRITICAL': 'red,bg_white',
 		},
 		secondary_log_colors={},
-		style='%'
+		style='%',
 	)
 	handler.setFormatter(formatter)
 	logger = colorlog.getLogger()
