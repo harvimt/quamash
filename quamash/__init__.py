@@ -328,9 +328,6 @@ class QEventLoop(_baseclass):
 		super().close()
 
 		self._timer.stop()
-
-		self._timer = None
-
 		self.__app = None
 
 		for notifier in itertools.chain(self._read_notifiers.values(), self._write_notifiers.values()):
