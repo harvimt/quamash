@@ -17,20 +17,6 @@ import quamash
 import pytest
 
 
-class _SubprocessProtocol(asyncio.SubprocessProtocol):
-	def __init__(self, *args, **kwds):
-		super(_SubprocessProtocol, self).__init__(*args, **kwds)
-		self.received_stdout = None
-
-	def pipe_data_received(self, fd, data):
-		text = data.decode(locale.getpreferredencoding(False))
-		if fd == 1:
-			self.received_stdout = text.strip()
-
-	def process_exited(self):
-		asyncio.get_event_loop().stop()
-
-
 @pytest.fixture
 def loop(request, application):
 	lp = quamash.QEventLoop(application)
@@ -139,17 +125,6 @@ class TestCanRunTasksInExecutor:
 		logging.debug('start blocking task()')
 
 
-def test_can_execute_subprocess_primitive(loop):
-	"""Verify that a subprocess can be executed using low-level api."""
-	transport, protocol = loop.run_until_complete(
-		loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'import sys; sys.exit(5)',
-		),
-	)
-	loop.run_forever()
-	assert transport.get_returncode() == 5
-
-
 def test_can_execute_subprocess(loop):
 	"""Verify that a subprocess can be executed."""
 	@asyncio.coroutine
@@ -159,17 +134,6 @@ def test_can_execute_subprocess(loop):
 		yield from process.wait()
 		assert process.returncode == 5
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
-
-
-def test_can_read_subprocess_primitive(loop):
-	transport, protocol = loop.run_until_complete(
-		loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'print("Hello async world!")',
-		),
-	)
-	loop.run_forever()
-	assert transport.get_returncode() == 0
-	assert protocol.received_stdout == "Hello async world!"
 
 
 def test_can_read_subprocess(loop):
