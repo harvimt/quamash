@@ -114,6 +114,11 @@ Usage
 Changelog
 =========
 
+Version 0.6.0
+-------------
+* Lots of bugfixes and performance improvements.
+
+
 Version 0.5.5
 -------------
 * Fix `#62`_ a serious memory leak by switching from ``QTimer`` to ``QObject.timerEvent``.
