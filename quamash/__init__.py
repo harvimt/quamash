@@ -78,7 +78,7 @@ class _QThreadWorker(QtCore.QThread):
 			future, callback, args, kwargs = command
 			self._logger.debug(
 				'#{} got callback {} with args {} and kwargs {} from queue'
-				.format(self.__num, callback, args, kwargs)
+				.format(self.__num, callback, args, kwargs),
 			)
 			if future.set_running_or_notify_cancel():
 				self._logger.debug('Invoking callback')
@@ -171,39 +171,51 @@ def _make_signaller(qtimpl_qtcore, *args):
 	return Signaller()
 
 
-if os.name == 'nt':
-	from . import _windows
-	_baseclass = _windows.baseclass
-else:
-	from . import _unix
-	_baseclass = _unix.baseclass
-
-
+@with_logger
 class _SimpleTimer(QtCore.QObject):
-	def __init__(self, timeout, callback):
+	def __init__(self):
 		super().__init__()
-		self.callback = callback
-		self.timer_id = self.startTimer(timeout)
-		self.stopped = False
+		self.__callbacks = {}
+		self._stopped = False
 
-	def timerEvent(self, event):  # noqa
-		assert self.timer_id == event.timerId()
-		if self.stopped:
-			self.killTimer(self.timer_id)
-		elif event.timerId() == self.timer_id:
-			self.callback()
-			self.killTimer(self.timer_id)
-			self.stopped = True
+	def add_callback(self, handle, delay=0):
+		timerid = self.startTimer(delay * 1000)
+		self._logger.debug("Registering timer id {0}".format(timerid))
+		assert timerid not in self.__callbacks
+		self.__callbacks[timerid] = handle
+		return handle
+
+	def timerEvent(self, event):  # noqa: N802
+		timerid = event.timerId()
+		self._logger.debug("Timer event on id {0}".format(timerid))
+		if self._stopped:
+			self._logger.debug("Timer stopped, killing {}".format(timerid))
+			self.killTimer(timerid)
+			del self.__callbacks[timerid]
+		else:
+			try:
+				handle = self.__callbacks[timerid]
+			except KeyError as e:
+				self._logger.debug(str(e))
+				pass
+			else:
+				if handle._cancelled:
+					self._logger.debug("Handle {} cancelled".format(handle))
+				else:
+					self._logger.debug("Calling handle {}".format(handle))
+					handle._run()
+			finally:
+				del self.__callbacks[timerid]
+				handle = None
+			self.killTimer(timerid)
 
 	def stop(self):
-		self.stopped = True
-
-	def cancel(self):
-		self.stopped = True
+		self._logger.debug("Stopping timers")
+		self._stopped = True
 
 
 @with_logger
-class QEventLoop(_baseclass):
+class _QEventLoop:
 
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
@@ -225,7 +237,6 @@ class QEventLoop(_baseclass):
 	"""
 
 	def __init__(self, app=None):
-		self.__timers = []
 		self.__app = app or QApplication.instance()
 		assert self.__app is not None, 'No QApplication has been instantiated'
 		self.__is_running = False
@@ -234,6 +245,7 @@ class QEventLoop(_baseclass):
 		self.__exception_handler = None
 		self._read_notifiers = {}
 		self._write_notifiers = {}
+		self._timer = _SimpleTimer()
 
 		self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
 		self.__call_soon_signal = signaller.signal
@@ -247,6 +259,7 @@ class QEventLoop(_baseclass):
 		"""Run eventloop forever."""
 		self.__is_running = True
 		self._before_run_forever()
+
 		try:
 			self._logger.debug('Starting Qt event loop')
 			rslt = self.__app.exec_()
@@ -281,8 +294,8 @@ class QEventLoop(_baseclass):
 			return
 
 		self._logger.debug('Stopping event loop...')
-		self.__app.exit()
 		self.__is_running = False
+		self.__app.exit()
 		self._logger.debug('Stopped event loop')
 
 	def is_running(self):
@@ -306,11 +319,7 @@ class QEventLoop(_baseclass):
 
 		super().close()
 
-		for timer in self.__timers:
-			timer.stop()
-
-		self.__timers = None
-
+		self._timer.stop()
 		self.__app = None
 
 		for notifier in itertools.chain(self._read_notifiers.values(), self._write_notifiers.values()):
@@ -332,23 +341,7 @@ class QEventLoop(_baseclass):
 		return self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def _add_callback(self, handle, delay=0):
-		def upon_timeout():
-			nonlocal timer
-			nonlocal handle
-			if timer in self.__timers:
-				self.__timers.remove(timer)
-			else:
-				self._logger.warn('Timer {} not among {}'.format(timer, self.__timers))
-			timer = None
-			self._logger.debug('Callback timer fired, calling {}'.format(handle))
-			handle._run()
-			handle = None
-
-		self._logger.debug('Adding callback {} with delay {}'.format(handle, delay))
-		timer = _SimpleTimer(delay * 1000, upon_timeout)
-		self.__timers.append(timer)
-
-		return timer
+		return self._timer.add_callback(handle, delay)
 
 	def call_soon(self, callback, *args):
 		"""Register a callback to be run on the next iteration of the event loop."""
@@ -381,7 +374,7 @@ class QEventLoop(_baseclass):
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
 			lambda: self.__on_notifier_ready(
-				self._read_notifiers, notifier, fd, callback, args)
+				self._read_notifiers, notifier, fd, callback, args)  # noqa: C812
 		)
 		self._read_notifiers[fd] = notifier
 
@@ -417,7 +410,7 @@ class QEventLoop(_baseclass):
 		self._logger.debug('Adding writer callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(
 			lambda: self.__on_notifier_ready(
-				self._write_notifiers, notifier, fd, callback, args)
+				self._write_notifiers, notifier, fd, callback, args)  # noqa: C812
 		)
 		self._write_notifiers[fd] = notifier
 
@@ -455,7 +448,7 @@ class QEventLoop(_baseclass):
 		if fd not in notifiers:
 			self._logger.warning(
 				'Socket notifier for fd {} is ready, even though it should be disabled, not calling {} and disabling'
-				.format(fd, callback)
+				.format(fd, callback),
 			)
 			notifier.setEnabled(False)
 			return
@@ -485,7 +478,7 @@ class QEventLoop(_baseclass):
 		if isinstance(callback, asyncio.Handle):
 			assert not args
 			assert not isinstance(callback, asyncio.TimerHandle)
-			if callback.cancelled:
+			if callback._cancelled:
 				f = asyncio.Future()
 				f.set_result(None)
 				return f
@@ -590,5 +583,25 @@ class QEventLoop(_baseclass):
 		# In some cases, the error method itself fails, don't have a lot of options in that case
 		try:
 			cls._logger.error(*args, **kwds)
-		except:
+		except: # noqa E722
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
+
+
+from ._unix import _SelectorEventLoop
+QSelectorEventLoop = type('QSelectorEventLoop', (_QEventLoop, _SelectorEventLoop), {})
+
+if os.name == 'nt':
+	from ._windows import _ProactorEventLoop
+	QIOCPEventLoop = type('QIOCPEventLoop', (_QEventLoop, _ProactorEventLoop), {})
+	QEventLoop = QIOCPEventLoop
+else:
+	QEventLoop = QSelectorEventLoop
+
+
+class _Cancellable:
+	def __init__(self, timer, loop):
+		self.__timer = timer
+		self.__loop = loop
+
+	def cancel(self):
+		self.__timer.stop()

@@ -5,6 +5,7 @@
 """Windows specific Quamash functionality."""
 
 import asyncio
+import sys
 
 try:
 	import _winapi
@@ -39,9 +40,8 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 			try:
 				self._logger.debug('Invoking event callback {}'.format(callback))
 				value = callback(transferred, key, ov)
-			except OSError as e:
-				self._logger.warn('Event callback failed: {}'.format(e))
-				f.set_exception(e)
+			except OSError:
+				self._logger.warning('Event callback failed', exc_info=sys.exc_info())
 			else:
 				f.set_result(value)
 
@@ -50,9 +50,6 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 
 	def _after_run_forever(self):
 		self.__event_poller.stop()
-
-
-baseclass = _ProactorEventLoop
 
 
 @with_logger

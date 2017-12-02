@@ -2,7 +2,6 @@
 # © 2014 Arve Knudsen <arve.knudsen@gmail.com>
 # BSD License
 import asyncio
-import locale
 import logging
 import sys
 import os
@@ -15,20 +14,6 @@ import subprocess
 import quamash
 
 import pytest
-
-
-class _SubprocessProtocol(asyncio.SubprocessProtocol):
-	def __init__(self, *args, **kwds):
-		super(_SubprocessProtocol, self).__init__(*args, **kwds)
-		self.received_stdout = None
-
-	def pipe_data_received(self, fd, data):
-		text = data.decode(locale.getpreferredencoding(False))
-		if fd == 1:
-			self.received_stdout = text.strip()
-
-	def process_exited(self):
-		asyncio.get_event_loop().stop()
 
 
 @pytest.fixture
@@ -72,7 +57,7 @@ def loop(request, application):
 
 
 @pytest.fixture(
-	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor]
+	params=[None, quamash.QThreadExecutor, ThreadPoolExecutor, ProcessPoolExecutor],
 )
 def executor(request):
 	exc_cls = request.param
@@ -139,17 +124,6 @@ class TestCanRunTasksInExecutor:
 		logging.debug('start blocking task()')
 
 
-def test_can_execute_subprocess_primitive(loop):
-	"""Verify that a subprocess can be executed using low-level api."""
-	transport, protocol = loop.run_until_complete(
-		loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'import sys; sys.exit(5)',
-		),
-	)
-	loop.run_forever()
-	assert transport.get_returncode() == 5
-
-
 def test_can_execute_subprocess(loop):
 	"""Verify that a subprocess can be executed."""
 	@asyncio.coroutine
@@ -159,17 +133,6 @@ def test_can_execute_subprocess(loop):
 		yield from process.wait()
 		assert process.returncode == 5
 	loop.run_until_complete(asyncio.wait_for(mycoro(), timeout=3))
-
-
-def test_can_read_subprocess_primitive(loop):
-	transport, protocol = loop.run_until_complete(
-		loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'print("Hello async world!")',
-		),
-	)
-	loop.run_forever()
-	assert transport.get_returncode() == 0
-	assert protocol.received_stdout == "Hello async world!"
 
 
 def test_can_read_subprocess(loop):
@@ -202,17 +165,14 @@ def test_can_communicate_subprocess(loop):
 def test_can_terminate_subprocess(loop):
 	"""Verify that a subprocess can be terminated."""
 	# Start a never-ending process
-	transport = loop.run_until_complete(
-		loop.subprocess_exec(
-			_SubprocessProtocol, sys.executable or 'python', '-c', 'import time\nwhile True: time.sleep(1)',
-		),
-	)[0]
-	# Terminate!
-	transport.kill()
-	# Wait for process to die
-	loop.run_forever()
-
-	assert transport.get_returncode() != 0
+	@asyncio.coroutine
+	def mycoro():
+		process = yield from asyncio.create_subprocess_exec(
+			sys.executable or 'python', '-c', 'import time\nwhile True: time.sleep(1)')
+		process.terminate()
+		yield from process.wait()
+		assert process.returncode != 0
+	loop.run_until_complete(mycoro())
 
 
 @pytest.mark.raises(ExceptionTester)
@@ -711,9 +671,7 @@ def test_scheduling(loop, sock_pair):
 
 	def writer_cb(fut):
 		if fut.done():
-			cb_called.set_exception(
-				ValueError("writer_cb called twice")
-			)
+			cb_called.set_exception(ValueError("writer_cb called twice"))
 		fut.set_result(None)
 
 	def fut_cb(fut):
@@ -769,3 +727,15 @@ def test_exception_handler_simple(loop):
 	loop.call_later(0.1, loop.stop)
 	loop.run_forever()
 	assert handler_called
+
+
+def test_not_running_immediately_after_stopped(loop):
+	@asyncio.coroutine
+	def mycoro():
+		assert loop.is_running()
+		yield from asyncio.sleep(0)
+		loop.stop()
+		assert not loop.is_running()
+	assert not loop.is_running()
+	loop.run_until_complete(mycoro())
+	assert not loop.is_running()

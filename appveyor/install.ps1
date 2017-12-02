@@ -22,7 +22,7 @@ function InstallPip ($python_home) {
 
 function InstallPackage ($python_home, $pkg) {
 	$pip_path = $python_home + "\Scripts\pip.exe"
-	& $pip_path install $pkg
+	& $pip_path install --only-binary=PySide --only-binary=PyQt4 --only-binary=PyQt5 --find-links .\wheelhouse $pkg
 }
 
 function main () {
@@ -31,21 +31,15 @@ function main () {
 	InstallPip $env:PYTHON
 	InstallPackage $env:PYTHON wheel
 	InstallPackage $env:PYTHON pytest
-	InstallPackage $env:PYTHON pytest-timeout
-	if($PYTHON_MAJ_VERSION -eq '3.3'){
-		InstallPackage $env:PYTHON asyncio
-	}
 	switch ($env:QTIMPL){
 		"PySide" {
 			InstallPackage $env:Python PySide
 		}
 		"PyQt4" {
-			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.11.4/PyQt4-4.11.4-gpl-Py3.4-Qt4.8.7-x32.exe/download", "C:\install-PyQt4.exe")
-			Start-Process -FilePath C:\install-PyQt4.exe -ArgumentList "/S" -Wait -Passthru
+			InstallPackage $env:Python PyQt4
 		}
 		"PyQt5" {
-			(new-object net.webclient).DownloadFile("http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt5-5.5.1-gpl-Py3.4-Qt5.5.1-x32.exe/download", "C:\install-PyQt5.exe")
-			Start-Process -FilePath C:\install-PyQt5.exe -ArgumentList "/S" -Wait -Passthru
+			InstallPackage $env:Python PyQt5
 		}
 	}
 }

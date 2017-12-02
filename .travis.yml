@@ -23,7 +23,7 @@ install:
   - sudo apt-get update
   - sudo apt-get install -y libqt4-dev
   # Qt5
-  - sudo add-apt-repository -y ppa:beineri/opt-qt59-trusty
+  - sudo add-apt-repository -y ppa:beineri/opt-qt591-trusty
   - sudo apt-get update
   - sudo apt-get install -y qt59base
   # Builds
@@ -55,7 +55,7 @@ install:
   # PySide
   - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then pip install --find-links wheelhouse/ pyside; fi
   # flake8 style checker
-  - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout
+  - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout flake8-commas
 script:
   - flake8
   - flake8 --select=D1 quamash/*.py
