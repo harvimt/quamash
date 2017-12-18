@@ -187,7 +187,7 @@ class _SimpleTimer(QtCore.QObject):
 		self.__callbacks[timerid] = handle
 		return handle
 
-	def timerEvent(self, event):
+	def timerEvent(self, event):  # noqa: N802
 		timerid = event.timerId()
 		self.killTimer(timerid)
 		if self.__debug_enabled:
@@ -204,6 +204,7 @@ class _SimpleTimer(QtCore.QObject):
 			if self.__debug_enabled:
 				self._logger.debug("Calling handle {}".format(handle))
 			handle._run()
+			handle = None
 
 	def stop(self):
 		self._logger.debug("Stopping timers")
