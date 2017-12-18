@@ -204,7 +204,7 @@ class _SimpleTimer(QtCore.QObject):
 			if self.__debug_enabled:
 				self._logger.debug("Calling handle {}".format(handle))
 			handle._run()
-			handle = None
+			handle = None  # Needed to break cycles when an exception occurs.
 
 	def stop(self):
 		self._logger.debug("Stopping timers")
@@ -271,7 +271,8 @@ class _QEventLoop:
 
 	def run_until_complete(self, future):
 		"""Run until Future is complete."""
-		self._logger.debug('Running {} until complete'.format(future))
+		if self.__debug_enabled:
+			self._logger.debug('Running {} until complete'.format(future))
 		future = asyncio.async(future, loop=self)
 
 		def stop(*args): self.stop()  # noqa
@@ -284,7 +285,8 @@ class _QEventLoop:
 		if not future.done():
 			raise RuntimeError('Event loop stopped before Future completed.')
 
-		self._logger.debug('Future {} finished running'.format(future))
+		if self.__debug_enabled:
+			self._logger.debug('Future {} finished running'.format(future))
 		return future.result()
 
 	def stop(self):
