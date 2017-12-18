@@ -176,42 +176,41 @@ class _SimpleTimer(QtCore.QObject):
 	def __init__(self):
 		super().__init__()
 		self.__callbacks = {}
+		self.__debug_enabled = False
 		self._stopped = False
 
 	def add_callback(self, handle, delay=0):
 		timerid = self.startTimer(delay * 1000)
-		self._logger.debug("Registering timer id {0}".format(timerid))
+		if self.__debug_enabled:
+			self._logger.debug("Registering timer id {0}".format(timerid))
 		assert timerid not in self.__callbacks
 		self.__callbacks[timerid] = handle
 		return handle
 
-	def timerEvent(self, event):  # noqa: N802
+	def timerEvent(self, event):
 		timerid = event.timerId()
-		self._logger.debug("Timer event on id {0}".format(timerid))
-		if self._stopped:
+		self.killTimer(timerid)
+		if self.__debug_enabled:
+			self._logger.debug("Timer event on id {0}".format(timerid))
+
+		handle = self.__callbacks.pop(timerid, None)
+		if handle is None:
+			self._logger.debug("Unknown timerid: {}".format(timerid))
+		elif handle._cancelled:
+			self._logger.debug("Handle {} cancelled".format(handle))
+		elif self._stopped:
 			self._logger.debug("Timer stopped, killing {}".format(timerid))
-			self.killTimer(timerid)
-			del self.__callbacks[timerid]
 		else:
-			try:
-				handle = self.__callbacks[timerid]
-			except KeyError as e:
-				self._logger.debug(str(e))
-				pass
-			else:
-				if handle._cancelled:
-					self._logger.debug("Handle {} cancelled".format(handle))
-				else:
-					self._logger.debug("Calling handle {}".format(handle))
-					handle._run()
-			finally:
-				del self.__callbacks[timerid]
-				handle = None
-			self.killTimer(timerid)
+			if self.__debug_enabled:
+				self._logger.debug("Calling handle {}".format(handle))
+			handle._run()
 
 	def stop(self):
 		self._logger.debug("Stopping timers")
 		self._stopped = True
+
+	def set_debug(self, enabled):
+		self.__debug_enabled = enabled
 
 
 @with_logger
@@ -335,9 +334,10 @@ class _QEventLoop:
 		if not callable(callback):
 			raise TypeError('callback must be callable: {}'.format(type(callback).__name__))
 
-		self._logger.debug(
-			'Registering callback {} to be invoked with arguments {} after {} second(s)'
-			.format(callback, args, delay))
+		if self.__debug_enabled:
+			self._logger.debug(
+				'Registering callback {} to be invoked with arguments {} after {} second(s)'
+				.format(callback, args, delay))
 		return self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def _add_callback(self, handle, delay=0):
@@ -456,7 +456,8 @@ class _QEventLoop:
 		# It can be necessary to disable QSocketNotifier when e.g. checking
 		# ZeroMQ sockets for events
 		assert notifier.isEnabled()
-		self._logger.debug('Socket notifier for fd {} is ready'.format(fd))
+		if self.__debug_enabled:
+			self._logger.debug('Socket notifier for fd {} is ready'.format(fd))
 		notifier.setEnabled(False)
 		self.call_soon(
 			self.__notifier_cb_wrapper,
@@ -570,6 +571,7 @@ class _QEventLoop:
 	def set_debug(self, enabled):
 		super().set_debug(enabled)
 		self.__debug_enabled = enabled
+		self._timer.set_debug(enabled)
 
 	def __enter__(self):
 		return self
@@ -583,7 +585,7 @@ class _QEventLoop:
 		# In some cases, the error method itself fails, don't have a lot of options in that case
 		try:
 			cls._logger.error(*args, **kwds)
-		except: # noqa E722
+		except:  # noqa E722
 			sys.stderr.write('{!r}, {!r}\n'.format(args, kwds))
 
 
