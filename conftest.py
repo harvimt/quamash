@@ -38,5 +38,5 @@ else:
 
 @fixture(scope='session')
 def application():
-	from quamash import QApplication
-	return QApplication([])
+	from quamash import QCoreApplication
+	return QCoreApplication([])
