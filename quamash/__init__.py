@@ -41,13 +41,7 @@ if not QtModule:
 logger.info('Using Qt Implementation: {}'.format(QtModuleName))
 
 QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
-QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
-if QtModuleName == 'PyQt5':
-	from PyQt5 import QtWidgets
-	QApplication = QtWidgets.QApplication
-else:
-	QApplication = QtGui.QApplication
-
+QCoreApplication = QtCore.QCoreApplication
 
 from ._common import with_logger
 
@@ -237,8 +231,8 @@ class _QEventLoop:
 	"""
 
 	def __init__(self, app=None):
-		self.__app = app or QApplication.instance()
-		assert self.__app is not None, 'No QApplication has been instantiated'
+		self.__app = app or QCoreApplication.instance()
+		assert self.__app is not None, 'No QCoreApplication has been instantiated'
 		self.__is_running = False
 		self.__debug_enabled = False
 		self.__default_executor = None
