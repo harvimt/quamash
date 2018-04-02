@@ -7,7 +7,7 @@ __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knud
 __version__ = '0.6.0'
 __url__ = 'https://github.com/harvimt/quamash'
 __license__ = 'BSD'
-__all__ = ['QEventLoop', 'QThreadExecutor']
+__all__ = ['QEventLoop', 'QThreadExecutor', 'AsyncSignals']
 
 import sys
 import os
@@ -215,8 +215,89 @@ class _SimpleTimer(QtCore.QObject):
 
 
 @with_logger
-class _QEventLoop:
+class AsyncSignals:
+	def __init__(self, signals, loop=None):
+		self._signaller = _make_signaller(QtCore, object)
+		if loop is not None:
+			self._loop = loop
+		else:
+			self._loop = asyncio.get_event_loop()
+		self._callbacks = set()
+		self.caller = None
+		self.result = None
+		self.cancelled = False
+		self._logger.debug("Wrapping signals: {}".format(signals))
+		for i, s in enumerate(signals):
+			def cb(*args, i=i):
+				self._called(i, *args)
+			s.connect(cb)
+			self._callbacks.add((s, cb))
 
+	@property
+	def done(self):
+		return self._signaller.signal
+
+	def _called(self, i, *args):
+		self._logger.debug("Signal {} called, emitting done".format(i))
+		self.caller = i
+		self.result = args
+		self._disconnect()
+		self.done.emit(self)
+
+	def _disconnect(self):
+		for s, cb in self._callbacks:
+			s.disconnect(cb)
+		self._callbacks.clear()
+
+	def cancel(self):
+		self._disconnect()
+		self._logger.debug("Cancelled async signal")
+		self.caller = None
+		self.result = None
+		self.cancelled = True
+
+	def __await__(self):
+		self.cancelled = False
+		future = self._loop.create_future()
+		h = future._loop.call_when_done(self, self._set_future_result, future)
+		try:
+			self._logger.debug("Awaiting signals")
+			yield from future
+			self._logger.debug("Signal returned {}".format(self.result))
+			return (self.caller, self.result)
+		finally:
+			h.cancel()
+
+	def _set_future_result(self, future):
+		if future.cancelled():
+			self._logger.debug("Future cancelled, not setting result")
+			return
+		self._logger.debug("Setting future result {}".format(self.result))
+		future.set_result(self.result)
+
+
+@with_logger
+class AsyncSignalKeeper:
+	def __init__(self):
+		self._async_signals = {}
+
+	def track(self, handle, asignal):
+		self._async_signals[asignal] = handle
+		asignal.done.connect(self._signal_done)
+		return handle
+
+	def _signal_done(self, asignal):
+		self._logger.debug("Received signal done from {}".format(asignal))
+		asignal.done.disconnect(self._signal_done)
+		handle = self._async_signals.pop(asignal, None)
+		if handle is None or handle._cancelled:
+			return
+		self._logger.debug("Running the handle {}".format(handle))
+		handle._run()
+
+
+@with_logger
+class _QEventLoop:
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
 
@@ -248,6 +329,7 @@ class _QEventLoop:
 		self._timer = _SimpleTimer()
 
 		self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
+		self._async_keeper = AsyncSignalKeeper()
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
 
@@ -339,6 +421,22 @@ class _QEventLoop:
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
 		return self._add_callback(asyncio.Handle(callback, args, self), delay)
+
+	def call_when_done(self, asignal, callback, *args):
+		if asignal.caller is not None:
+			return self.call_soon(callback, *args)
+
+		"""Register callback to be invoked after a certain delay."""
+		if asyncio.iscoroutinefunction(callback):
+			raise TypeError("coroutines cannot be used with call_when_done")
+		if not callable(callback):
+			raise TypeError('callback must be callable: {}'.format(type(callback).__name__))
+
+		self._logger.debug(
+			'Registering callback {} to be invoked after a signal'
+			.format(callback))
+		handle = asyncio.Handle(callback, args, self)
+		return self._async_keeper.track(handle, asignal)
 
 	def _add_callback(self, handle, delay=0):
 		return self._timer.add_callback(handle, delay)
