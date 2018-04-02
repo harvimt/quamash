@@ -16,6 +16,9 @@ import quamash
 import pytest
 
 
+from PyQt5.QtCore import QObject, pyqtSignal
+
+
 @pytest.fixture
 def loop(request, application):
 	lp = quamash.QEventLoop(application)
@@ -739,3 +742,86 @@ def test_not_running_immediately_after_stopped(loop):
 	assert not loop.is_running()
 	loop.run_until_complete(mycoro())
 	assert not loop.is_running()
+
+
+class SignalCaller(QObject):
+	first_signal = pyqtSignal(int)
+	second_signal = pyqtSignal(int)
+
+	def __init__(self):
+		QObject.__init__(self)
+		self.timer_count = 0
+
+	def immediate(self):
+		self.first_signal.emit(1)
+		self.second_signal.emit(2)
+
+	def timed(self):
+		self.timer_count = 0
+		self._timer = self.startTimer(0)
+
+	def timerEvent(self, event):    # noqa: N802
+		self.timer_count += 1
+		if self.timer_count == 1:
+			self.first_signal.emit(1)
+		if self.timer_count == 2:
+			self.second_signal.emit(2)
+			self.timer_count = 0
+			self.killTimer(self._timer)
+
+
+def test_can_await_signal(loop):
+	caller = SignalCaller()
+
+	async def mycoro():
+		sigs = quamash.AsyncSignals([caller.first_signal])
+		caller.timed()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+	loop.run_until_complete(mycoro())
+
+
+def test_signals_delivered_before_await_work(loop):
+	caller = SignalCaller()
+
+	async def mycoro():
+		sigs = quamash.AsyncSignals([caller.first_signal])
+		caller.immediate()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+	loop.run_until_complete(mycoro())
+
+
+def test_can_await_signal_multiple_times(loop):
+	caller = SignalCaller()
+
+	async def mycoro():
+		sigs = quamash.AsyncSignals([caller.first_signal])
+		sigs2 = quamash.AsyncSignals([caller.second_signal])
+		caller.timed()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+		(sender, result) = await sigs2
+		number, = result
+		assert sender == 0
+		assert number == 2
+	loop.run_until_complete(mycoro())
+
+
+def test_can_await_multiple_signals(loop):
+	caller = SignalCaller()
+
+	async def mycoro():
+		sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+		caller.timed()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+	loop.run_until_complete(mycoro())
