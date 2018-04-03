@@ -223,8 +223,7 @@ class AsyncSignals:
 		else:
 			self._loop = asyncio.get_event_loop()
 		self._callbacks = set()
-		self.caller = None
-		self.result = None
+		self.results = []
 		self.cancelled = False
 		self._logger.debug("Wrapping signals: {}".format(signals))
 		for i, s in enumerate(signals):
@@ -239,9 +238,7 @@ class AsyncSignals:
 
 	def _called(self, i, *args):
 		self._logger.debug("Signal {} called, emitting done".format(i))
-		self.caller = i
-		self.result = args
-		self._disconnect()
+		self.results.append((i, args))
 		self.done.emit(self)
 
 	def _disconnect(self):
@@ -252,8 +249,7 @@ class AsyncSignals:
 	def cancel(self):
 		self._disconnect()
 		self._logger.debug("Cancelled async signal")
-		self.caller = None
-		self.result = None
+		self.results.clear()
 		self.cancelled = True
 
 	def __await__(self):
@@ -263,8 +259,9 @@ class AsyncSignals:
 		try:
 			self._logger.debug("Awaiting signals")
 			yield from future
-			self._logger.debug("Signal returned {}".format(self.result))
-			return (self.caller, self.result)
+			items = future.result()
+			self._logger.debug("Signal returned: {}".format(items))
+			return items
 		finally:
 			h.cancel()
 
@@ -272,8 +269,8 @@ class AsyncSignals:
 		if future.cancelled():
 			self._logger.debug("Future cancelled, not setting result")
 			return
-		self._logger.debug("Setting future result {}".format(self.result))
-		future.set_result(self.result)
+		item = self.results.pop(0)
+		future.set_result(item)
 
 
 @with_logger
@@ -423,7 +420,7 @@ class _QEventLoop:
 		return self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def call_when_done(self, asignal, callback, *args):
-		if asignal.caller is not None:
+		if asignal.results:
 			return self.call_soon(callback, *args)
 
 		"""Register callback to be invoked after a certain delay."""
