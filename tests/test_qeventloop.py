@@ -10,6 +10,8 @@ import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
+import weakref
+import gc
 
 import quamash
 
@@ -837,3 +839,26 @@ def test_multiple_signals_get_queued(loop):
 		assert sender == 1
 		assert number == 2
 	loop.run_until_complete(mycoro())
+
+
+def test_async_signals_get_cleaned_up(loop):
+	caller = SignalCaller()
+	sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+
+	async def mycoro(caller, sigs):
+		caller.immediate()
+		(sender, result) = await sigs
+		(sender, result) = await sigs
+
+	f = asyncio.ensure_future(mycoro(caller, sigs))
+	w_sigs = weakref.ref(sigs)
+	w_caller = weakref.ref(caller)
+	del sigs
+	del caller
+
+	assert w_sigs() is not None
+	assert w_caller() is not None
+	loop.run_until_complete(f)
+	gc.collect()
+	assert w_sigs() is None
+	assert w_caller() is None
