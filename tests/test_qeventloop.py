@@ -862,3 +862,26 @@ def test_async_signals_get_cleaned_up(loop):
 	gc.collect()
 	assert w_sigs() is None
 	assert w_caller() is None
+
+
+def test_future_signals(loop):
+	caller = SignalCaller()
+	sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+	signalled = False
+
+	async def mycoro(caller, sigs):
+		caller.immediate()
+		(sender, result) = await sigs
+		(sender, result) = await sigs
+
+	f = asyncio.ensure_future(mycoro(caller, sigs))
+
+	def signal_catch(fut):
+		nonlocal signalled
+		nonlocal f
+		assert fut is f
+		signalled = True
+
+	f.done_signal.connect(signal_catch)
+	loop.run_until_complete(f)
+	assert signalled

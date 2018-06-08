@@ -214,6 +214,35 @@ class _SimpleTimer(QtCore.QObject):
 		self._stopped = True
 
 
+class SignalMixin:
+	def __init__(self):
+		self._done_signal = None
+
+	@property
+	def done_signal(self):
+		if self._done_signal is None:
+			self._done_signal = _make_signaller(QtCore, object)
+		return self._done_signal.signal
+
+	def emit_done_signal(self, result):
+		if self._done_signal is not None:
+			self.done_signal.emit(result)
+
+
+class SignalTask(asyncio.Task, SignalMixin):
+	def __init__(self, *args, **kwargs):
+		asyncio.Task.__init__(self, *args, **kwargs)
+		SignalMixin.__init__(self)
+		self.add_done_callback(self.emit_done_signal)
+
+
+class SignalFuture(asyncio.Future, SignalMixin):
+	def __init__(self, *args, **kwargs):
+		asyncio.Future.__init__(self, *args, **kwargs)
+		SignalMixin.__init__(self)
+		self.add_done_callback(self.emit_done_signal)
+
+
 @with_logger
 class AsyncSignals:
 	def __init__(self, signals, loop=None):
@@ -330,6 +359,7 @@ class _QEventLoop:
 			self._logger.debug('Starting Qt event loop')
 			rslt = self.__app.exec_()
 			self._logger.debug('Qt event loop ended with result {}'.format(rslt))
+			self.__app.processEvents()  # run loop one last time to process all the events
 			return rslt
 		finally:
 			self._after_run_forever()
@@ -346,7 +376,6 @@ class _QEventLoop:
 			self.run_forever()
 		finally:
 			future.remove_done_callback(stop)
-		self.__app.processEvents()  # run loop one last time to process all the events
 		if not future.done():
 			raise RuntimeError('Event loop stopped before Future completed.')
 
@@ -643,6 +672,17 @@ class _QEventLoop:
 				self.__log_error(
 					'Exception in default exception handler while handling an unexpected error '
 					'in custom exception handler', exc_info=True)
+
+	def create_future(self):
+		return SignalFuture(loop=self)
+
+	def create_task(self, coro):
+		if self.is_closed():
+			raise RuntimeError("Event loop is closed")
+		task = SignalTask(coro, loop=self)
+		if task._source_traceback:
+			del task._source_traceback[-1]
+		return task
 
 	# Debug flag management.
 
