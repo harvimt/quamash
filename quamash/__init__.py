@@ -221,12 +221,12 @@ class SignalMixin:
 	@property
 	def done_signal(self):
 		if self._done_signal is None:
-			self._done_signal = _make_signaller(QtCore, object)
+			self._done_signal = _make_signaller(QtCore, object, object)
 		return self._done_signal.signal
 
 	def emit_done_signal(self, result):
 		if self._done_signal is not None:
-			self.done_signal.emit(result)
+			self.done_signal.emit(result, self)
 
 
 class SignalTask(asyncio.Task, SignalMixin):
