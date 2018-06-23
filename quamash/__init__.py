@@ -16,37 +16,16 @@ import time
 import itertools
 from queue import Queue
 from concurrent.futures import Future
+from ._qt import QtModule
 import logging
 logger = logging.getLogger('quamash')
 
-try:
-	QtModuleName = os.environ['QUAMASH_QTIMPL']
-except KeyError:
-	QtModule = None
-else:
-	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
-	QtModule = __import__(QtModuleName)
+qt_module = QtModule()
 
-if not QtModule:
-	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
-		try:
-			QtModule = __import__(QtModuleName)
-		except ImportError:
-			continue
-		else:
-			break
-	else:
-		raise ImportError('No Qt implementations found')
 
-logger.info('Using Qt Implementation: {}'.format(QtModuleName))
-
-QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
-QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
-if QtModuleName == 'PyQt5':
-	from PyQt5 import QtWidgets
-	QApplication = QtWidgets.QApplication
-else:
-	QApplication = QtGui.QApplication
+QtCore = qt_module.import_('QtCore')
+QtGui = qt_module.import_('QtGui')
+QApplication = qt_module.qapplication
 
 
 from ._common import with_logger
@@ -162,12 +141,11 @@ class QThreadExecutor:
 		self.shutdown()
 
 
-def _make_signaller(qtimpl_qtcore, *args):
-	class Signaller(qtimpl_qtcore.QObject):
-		try:
-			signal = qtimpl_qtcore.Signal(*args)
-		except AttributeError:
-			signal = qtimpl_qtcore.pyqtSignal(*args)
+def _make_signaller(qtmodule, *args):
+	core = qtmodule.import_('QtCore')
+
+	class Signaller(core.QObject):
+		signal = qtmodule.signal(*args)
 	return Signaller()
 
 
@@ -221,7 +199,7 @@ class SignalMixin:
 	@property
 	def done_signal(self):
 		if self._done_signal is None:
-			self._done_signal = _make_signaller(QtCore, object, object)
+			self._done_signal = _make_signaller(qt_module, object, object)
 		return self._done_signal.signal
 
 	def emit_done_signal(self, result):
@@ -246,7 +224,7 @@ class SignalFuture(asyncio.Future, SignalMixin):
 @with_logger
 class AsyncSignals:
 	def __init__(self, signals, loop=None):
-		self._signaller = _make_signaller(QtCore, object)
+		self._signaller = _make_signaller(qt_module, object)
 		if loop is not None:
 			self._loop = loop
 		else:
@@ -341,7 +319,7 @@ class _QEventLoop:
 		self._write_notifiers = {}
 		self._timer = _SimpleTimer()
 
-		self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
+		self.__call_soon_signaller = signaller = _make_signaller(qt_module, object, tuple)
 		self._async_keeper = AsyncSignalKeeper()
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))

@@ -14,11 +14,14 @@ import weakref
 import gc
 
 import quamash
+from quamash._qt import QtModule
+
 
 import pytest
 
 
-from PyQt5.QtCore import QObject, pyqtSignal
+qt_module = QtModule()
+QtCore = qt_module.import_('QtCore')
 
 
 @pytest.fixture
@@ -746,12 +749,12 @@ def test_not_running_immediately_after_stopped(loop):
 	assert not loop.is_running()
 
 
-class SignalCaller(QObject):
-	first_signal = pyqtSignal(int)
-	second_signal = pyqtSignal(int)
+class SignalCaller(QtCore.QObject):
+	first_signal = qt_module.signal(int)
+	second_signal = qt_module.signal(int)
 
 	def __init__(self):
-		QObject.__init__(self)
+		QtCore.QObject.__init__(self)
 		self.timer_count = 0
 
 	def immediate(self):
