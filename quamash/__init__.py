@@ -224,13 +224,13 @@ class SignalFuture(asyncio.Future, SignalMixin):
 @with_logger
 class AsyncSignals:
 	def __init__(self, signals, loop=None):
-		self._signaller = _make_signaller(qt_module, object)
 		if loop is not None:
 			self._loop = loop
 		else:
 			self._loop = asyncio.get_event_loop()
 		self._callbacks = set()
 		self.results = []
+		self._futures = []
 		self._logger.debug("Wrapping signals: {}".format(signals))
 		for i, s in enumerate(signals):
 			def cb(*args, i=i):
@@ -238,53 +238,21 @@ class AsyncSignals:
 			s.connect(cb)
 			self._callbacks.add((s, cb))
 
-	@property
-	def done(self):
-		return self._signaller.signal
-
 	def _called(self, i, *args):
-		self._logger.debug("Signal {} called, emitting done".format(i))
 		self.results.append((i, args))
-		self.done.emit(self)
+		self._try_pop_result()
 
 	def __await__(self):
 		future = self._loop.create_future()
-		h = future._loop.call_when_done(self, self._set_future_result, future)
-		try:
-			self._logger.debug("Awaiting signals")
-			yield from future
-			items = future.result()
-			self._logger.debug("Signal returned: {}".format(items))
-			return items
-		finally:
-			h.cancel()
+		self._futures.append(future)
+		future._loop.call_soon(self._try_pop_result)
+		return future.__iter__()
 
-	def _set_future_result(self, future):
-		if future.cancelled():
-			self._logger.debug("Future cancelled, not setting result")
-			return
-		item = self.results.pop(0)
-		future.set_result(item)
-
-
-@with_logger
-class AsyncSignalKeeper:
-	def __init__(self):
-		self._async_signals = {}
-
-	def track(self, handle, asignal):
-		self._async_signals[asignal] = handle
-		asignal.done.connect(self._signal_done)
-		return handle
-
-	def _signal_done(self, asignal):
-		self._logger.debug("Received signal done from {}".format(asignal))
-		asignal.done.disconnect(self._signal_done)
-		handle = self._async_signals.pop(asignal, None)
-		if handle is None or handle._cancelled:
-			return
-		self._logger.debug("Running the handle {}".format(handle))
-		handle._run()
+	def _try_pop_result(self):
+		if self.results and self._futures:
+			self._futures[0].set_result(self.results[0])
+			del self._futures[0]
+			del self.results[0]
 
 
 @with_logger
@@ -320,7 +288,6 @@ class _QEventLoop:
 		self._timer = _SimpleTimer()
 
 		self.__call_soon_signaller = signaller = _make_signaller(qt_module, object, tuple)
-		self._async_keeper = AsyncSignalKeeper()
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
 
@@ -412,22 +379,6 @@ class _QEventLoop:
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
 		return self._add_callback(asyncio.Handle(callback, args, self), delay)
-
-	def call_when_done(self, asignal, callback, *args):
-		if asignal.results:
-			return self.call_soon(callback, *args)
-
-		"""Register callback to be invoked after a certain delay."""
-		if asyncio.iscoroutinefunction(callback):
-			raise TypeError("coroutines cannot be used with call_when_done")
-		if not callable(callback):
-			raise TypeError('callback must be callable: {}'.format(type(callback).__name__))
-
-		self._logger.debug(
-			'Registering callback {} to be invoked after a signal'
-			.format(callback))
-		handle = asyncio.Handle(callback, args, self)
-		return self._async_keeper.track(handle, asignal)
 
 	def _add_callback(self, handle, delay=0):
 		return self._timer.add_callback(handle, delay)
