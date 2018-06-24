@@ -7,7 +7,7 @@ __author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knud
 __version__ = '0.6.0'
 __url__ = 'https://github.com/harvimt/quamash'
 __license__ = 'BSD'
-__all__ = ['QEventLoop', 'QThreadExecutor']
+__all__ = ['QEventLoop', 'QThreadExecutor', 'AsyncSignals']
 
 import sys
 import os
@@ -16,37 +16,16 @@ import time
 import itertools
 from queue import Queue
 from concurrent.futures import Future
+from ._qt import QtModule
 import logging
 logger = logging.getLogger('quamash')
 
-try:
-	QtModuleName = os.environ['QUAMASH_QTIMPL']
-except KeyError:
-	QtModule = None
-else:
-	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
-	QtModule = __import__(QtModuleName)
+qt_module = QtModule()
 
-if not QtModule:
-	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
-		try:
-			QtModule = __import__(QtModuleName)
-		except ImportError:
-			continue
-		else:
-			break
-	else:
-		raise ImportError('No Qt implementations found')
 
-logger.info('Using Qt Implementation: {}'.format(QtModuleName))
-
-QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
-QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
-if QtModuleName == 'PyQt5':
-	from PyQt5 import QtWidgets
-	QApplication = QtWidgets.QApplication
-else:
-	QApplication = QtGui.QApplication
+QtCore = qt_module.import_('QtCore')
+QtGui = qt_module.import_('QtGui')
+QApplication = qt_module.qapplication
 
 
 from ._common import with_logger
@@ -162,12 +141,11 @@ class QThreadExecutor:
 		self.shutdown()
 
 
-def _make_signaller(qtimpl_qtcore, *args):
-	class Signaller(qtimpl_qtcore.QObject):
-		try:
-			signal = qtimpl_qtcore.Signal(*args)
-		except AttributeError:
-			signal = qtimpl_qtcore.pyqtSignal(*args)
+def _make_signaller(qtmodule, *args):
+	core = qtmodule.import_('QtCore')
+
+	class Signaller(core.QObject):
+		signal = qtmodule.signal(*args)
 	return Signaller()
 
 
@@ -214,9 +192,71 @@ class _SimpleTimer(QtCore.QObject):
 		self._stopped = True
 
 
+class SignalMixin:
+	def __init__(self):
+		self._done_signal = None
+
+	@property
+	def done_signal(self):
+		if self._done_signal is None:
+			self._done_signal = _make_signaller(qt_module, object, object)
+		return self._done_signal.signal
+
+	def emit_done_signal(self, result):
+		if self._done_signal is not None:
+			self.done_signal.emit(result, self)
+
+
+class SignalTask(asyncio.Task, SignalMixin):
+	def __init__(self, *args, **kwargs):
+		asyncio.Task.__init__(self, *args, **kwargs)
+		SignalMixin.__init__(self)
+		self.add_done_callback(self.emit_done_signal)
+
+
+class SignalFuture(asyncio.Future, SignalMixin):
+	def __init__(self, *args, **kwargs):
+		asyncio.Future.__init__(self, *args, **kwargs)
+		SignalMixin.__init__(self)
+		self.add_done_callback(self.emit_done_signal)
+
+
+@with_logger
+class AsyncSignals:
+	def __init__(self, signals, loop=None):
+		if loop is not None:
+			self._loop = loop
+		else:
+			self._loop = asyncio.get_event_loop()
+		self._callbacks = set()
+		self.results = []
+		self._futures = []
+		self._logger.debug("Wrapping signals: {}".format(signals))
+		for i, s in enumerate(signals):
+			def cb(*args, i=i):
+				self._called(i, *args)
+			s.connect(cb)
+			self._callbacks.add((s, cb))
+
+	def _called(self, i, *args):
+		self.results.append((i, args))
+		self._try_pop_result()
+
+	def __await__(self):
+		future = self._loop.create_future()
+		self._futures.append(future)
+		future._loop.call_soon(self._try_pop_result)
+		return future.__iter__()
+
+	def _try_pop_result(self):
+		if self.results and self._futures:
+			self._futures[0].set_result(self.results[0])
+			del self._futures[0]
+			del self.results[0]
+
+
 @with_logger
 class _QEventLoop:
-
 	"""
 	Implementation of asyncio event loop that uses the Qt Event loop.
 
@@ -247,7 +287,7 @@ class _QEventLoop:
 		self._write_notifiers = {}
 		self._timer = _SimpleTimer()
 
-		self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
+		self.__call_soon_signaller = signaller = _make_signaller(qt_module, object, tuple)
 		self.__call_soon_signal = signaller.signal
 		signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
 
@@ -264,6 +304,7 @@ class _QEventLoop:
 			self._logger.debug('Starting Qt event loop')
 			rslt = self.__app.exec_()
 			self._logger.debug('Qt event loop ended with result {}'.format(rslt))
+			self.__app.processEvents()  # run loop one last time to process all the events
 			return rslt
 		finally:
 			self._after_run_forever()
@@ -280,7 +321,6 @@ class _QEventLoop:
 			self.run_forever()
 		finally:
 			future.remove_done_callback(stop)
-		self.__app.processEvents()  # run loop one last time to process all the events
 		if not future.done():
 			raise RuntimeError('Event loop stopped before Future completed.')
 
@@ -561,6 +601,17 @@ class _QEventLoop:
 				self.__log_error(
 					'Exception in default exception handler while handling an unexpected error '
 					'in custom exception handler', exc_info=True)
+
+	def create_future(self):
+		return SignalFuture(loop=self)
+
+	def create_task(self, coro):
+		if self.is_closed():
+			raise RuntimeError("Event loop is closed")
+		task = SignalTask(coro, loop=self)
+		if task._source_traceback:
+			del task._source_traceback[-1]
+		return task
 
 	# Debug flag management.
 

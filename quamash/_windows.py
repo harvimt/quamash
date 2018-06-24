@@ -16,7 +16,7 @@ except ImportError:  # noqa
 
 import math
 
-from . import QtCore, _make_signaller
+from . import qt_module, QtCore, _make_signaller
 from ._common import with_logger
 
 UINT32_MAX = 0xffffffff
@@ -29,7 +29,7 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 	def __init__(self):
 		super().__init__(_IocpProactor())
 
-		self.__event_signaller = _make_signaller(QtCore, list)
+		self.__event_signaller = _make_signaller(qt_module, list)
 		self.__event_signal = self.__event_signaller.signal
 		self.__event_signal.connect(self._process_events)
 		self.__event_poller = _EventPoller(self.__event_signal)

@@ -10,10 +10,18 @@ import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
+import weakref
+import gc
 
 import quamash
+from quamash._qt import QtModule
+
 
 import pytest
+
+
+qt_module = QtModule()
+QtCore = qt_module.import_('QtCore')
 
 
 @pytest.fixture
@@ -739,3 +747,144 @@ def test_not_running_immediately_after_stopped(loop):
 	assert not loop.is_running()
 	loop.run_until_complete(mycoro())
 	assert not loop.is_running()
+
+
+class SignalCaller(QtCore.QObject):
+	first_signal = qt_module.signal(int)
+	second_signal = qt_module.signal(int)
+
+	def __init__(self):
+		QtCore.QObject.__init__(self)
+		self.timer_count = 0
+
+	def immediate(self):
+		self.first_signal.emit(1)
+		self.second_signal.emit(2)
+
+	def timed(self):
+		self.timer_count = 0
+		self._timer = self.startTimer(0)
+
+	def timerEvent(self, event):    # noqa: N802
+		self.timer_count += 1
+		if self.timer_count == 1:
+			self.first_signal.emit(1)
+		if self.timer_count == 2:
+			self.second_signal.emit(2)
+			self.timer_count = 0
+			self.killTimer(self._timer)
+
+
+def test_can_await_signal(loop):
+	async def mycoro():
+		caller = SignalCaller()
+		sigs = quamash.AsyncSignals([caller.first_signal])
+		caller.timed()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+	loop.run_until_complete(mycoro())
+
+
+def test_signals_delivered_before_await_work(loop):
+	async def mycoro():
+		caller = SignalCaller()
+		sigs = quamash.AsyncSignals([caller.first_signal])
+		caller.immediate()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+	loop.run_until_complete(mycoro())
+
+
+def test_can_await_signal_multiple_times(loop):
+	async def mycoro():
+		caller = SignalCaller()
+		sigs = quamash.AsyncSignals([caller.first_signal])
+		sigs2 = quamash.AsyncSignals([caller.second_signal])
+		caller.timed()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+		(sender, result) = await sigs2
+		number, = result
+		assert sender == 0
+		assert number == 2
+	loop.run_until_complete(mycoro())
+
+
+def test_can_await_multiple_signals(loop):
+	async def mycoro():
+		caller = SignalCaller()
+		sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+		caller.timed()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+	loop.run_until_complete(mycoro())
+
+
+def test_multiple_signals_get_queued(loop):
+	async def mycoro():
+		caller = SignalCaller()
+		sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+		caller.immediate()
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 0
+		assert number == 1
+		(sender, result) = await sigs
+		number, = result
+		assert sender == 1
+		assert number == 2
+	loop.run_until_complete(mycoro())
+
+
+def test_async_signals_get_cleaned_up(loop):
+	caller = SignalCaller()
+	sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+
+	async def mycoro(caller, sigs):
+		caller.immediate()
+		(sender, result) = await sigs
+		(sender, result) = await sigs
+
+	f = asyncio.ensure_future(mycoro(caller, sigs))
+	w_sigs = weakref.ref(sigs)
+	w_caller = weakref.ref(caller)
+	del sigs
+	del caller
+
+	assert w_sigs() is not None
+	assert w_caller() is not None
+	loop.run_until_complete(f)
+	gc.collect()
+	assert w_sigs() is None
+	assert w_caller() is None
+
+
+def test_future_signals(loop):
+	caller = SignalCaller()
+	sigs = quamash.AsyncSignals([caller.first_signal, caller.second_signal])
+	signalled = False
+
+	async def mycoro(caller, sigs):
+		caller.immediate()
+		(sender, result) = await sigs
+		(sender, result) = await sigs
+
+	f = asyncio.ensure_future(mycoro(caller, sigs))
+
+	def signal_catch(fut):
+		nonlocal signalled
+		nonlocal f
+		assert fut is f
+		signalled = True
+
+	f.done_signal.connect(signal_catch)
+	loop.run_until_complete(f)
+	assert signalled
