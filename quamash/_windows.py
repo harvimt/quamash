@@ -10,7 +10,7 @@ import sys
 try:
 	import _winapi
 	from asyncio import windows_events
-	from asyncio import _overlapped
+	import _overlapped
 except ImportError:  # noqa
 	pass  # w/o guarding this import py.test can't gather doctests on platforms w/o _winapi
 

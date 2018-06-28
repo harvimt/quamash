@@ -272,7 +272,7 @@ class _QEventLoop:
 	def run_until_complete(self, future):
 		"""Run until Future is complete."""
 		self._logger.debug('Running {} until complete'.format(future))
-		future = asyncio.async(future, loop=self)
+		future = asyncio.ensure_future(future, loop=self)
 
 		def stop(*args): self.stop()  # noqa
 		future.add_done_callback(stop)
@@ -328,7 +328,7 @@ class _QEventLoop:
 		self._read_notifiers = None
 		self._write_notifiers = None
 
-	def call_later(self, delay, callback, *args):
+	def call_later(self, delay, callback, *args, **kwargs):
 		"""Register callback to be invoked after a certain delay."""
 		if asyncio.iscoroutinefunction(callback):
 			raise TypeError("coroutines cannot be used with call_later")
@@ -338,18 +338,18 @@ class _QEventLoop:
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
-		return self._add_callback(asyncio.Handle(callback, args, self), delay)
+		return self._add_callback(asyncio.Handle(callback, args, self, **kwargs), delay)
 
 	def _add_callback(self, handle, delay=0):
 		return self._timer.add_callback(handle, delay)
 
-	def call_soon(self, callback, *args):
+	def call_soon(self, callback, *args, **kwargs):
 		"""Register a callback to be run on the next iteration of the event loop."""
-		return self.call_later(0, callback, *args)
+		return self.call_later(0, callback, *args, **kwargs)
 
-	def call_at(self, when, callback, *args):
+	def call_at(self, when, callback, *args, **kwargs):
 		"""Register callback to be invoked at a certain time."""
-		return self.call_later(when - self.time(), callback, *args)
+		return self.call_later(when - self.time(), callback, *args, **kwargs)
 
 	def time(self):
 		"""Get time according to event loop's clock."""
