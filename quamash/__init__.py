@@ -17,7 +17,7 @@ import itertools
 from queue import Queue
 from concurrent.futures import Future
 import logging
-from sys import version
+import importlib
 logger = logging.getLogger('quamash')
 
 try:
@@ -26,12 +26,12 @@ except KeyError:
 	QtModule = None
 else:
 	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
-	QtModule = __import__(QtModuleName)
+	QtModule = importlib.import_module(QtModuleName)
 
 if not QtModule:
 	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
 		try:
-			QtModule = __import__(QtModuleName)
+			QtModule = importlib.import_module(QtModuleName)
 		except ImportError:
 			continue
 		else:
@@ -41,8 +41,8 @@ if not QtModule:
 
 logger.info('Using Qt Implementation: {}'.format(QtModuleName))
 
-QtCore = __import__(QtModuleName + '.QtCore', fromlist=(QtModuleName,))
-QtGui = __import__(QtModuleName + '.QtGui', fromlist=(QtModuleName,))
+QtCore = importlib.import_module(QtModuleName + '.QtCore', package=(QtModuleName,))
+QtGui = importlib.import_module(QtModuleName + '.QtGui', package=(QtModuleName,))
 if QtModuleName == 'PyQt5':
 	from PyQt5 import QtWidgets
 	QApplication = QtWidgets.QApplication
@@ -468,9 +468,9 @@ class _QEventLoop:
 
 	# Methods for interacting with threads.
 
-	def call_soon_threadsafe(self, callback, *args):
+	def call_soon_threadsafe(self, callback, *args, context=None):
 		"""Thread-safe version of call_soon."""
-		self.__call_soon_signal.emit(callback, args)
+		self.__call_soon_signal.emit(callback, args, context=context)
 
 	def run_in_executor(self, executor, callback, *args):
 		"""Run callback in executor.
