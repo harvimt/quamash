@@ -17,6 +17,7 @@ import itertools
 from queue import Queue
 from concurrent.futures import Future
 import logging
+from sys import version
 logger = logging.getLogger('quamash')
 
 try:
@@ -328,7 +329,7 @@ class _QEventLoop:
 		self._read_notifiers = None
 		self._write_notifiers = None
 
-	def call_later(self, delay, callback, *args, **kwargs):
+	def call_later(self, delay, callback, *args, context=None):
 		"""Register callback to be invoked after a certain delay."""
 		if asyncio.iscoroutinefunction(callback):
 			raise TypeError("coroutines cannot be used with call_later")
@@ -338,18 +339,21 @@ class _QEventLoop:
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
-		return self._add_callback(asyncio.Handle(callback, args, self, **kwargs), delay)
+
+		if sys.version_info >= (3, 7):
+			return self._add_callback(asyncio.Handle(callback, args, self, context=context), delay)
+		return self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def _add_callback(self, handle, delay=0):
 		return self._timer.add_callback(handle, delay)
 
-	def call_soon(self, callback, *args, **kwargs):
+	def call_soon(self, callback, *args, context=None):
 		"""Register a callback to be run on the next iteration of the event loop."""
-		return self.call_later(0, callback, *args, **kwargs)
+		return self.call_later(0, callback, *args, context=context)
 
-	def call_at(self, when, callback, *args, **kwargs):
+	def call_at(self, when, callback, *args, context=None):
 		"""Register callback to be invoked at a certain time."""
-		return self.call_later(when - self.time(), callback, *args, **kwargs)
+		return self.call_later(when - self.time(), callback, *args, context=context)
 
 	def time(self):
 		"""Get time according to event loop's clock."""
