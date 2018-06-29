@@ -41,8 +41,8 @@ if not QtModule:
 
 logger.info('Using Qt Implementation: {}'.format(QtModuleName))
 
-QtCore = importlib.import_module(QtModuleName + '.QtCore', package=(QtModuleName,))
-QtGui = importlib.import_module(QtModuleName + '.QtGui', package=(QtModuleName,))
+QtCore = importlib.import_module(QtModuleName + '.QtCore', package=QtModuleName)
+QtGui = importlib.import_module(QtModuleName + '.QtGui', package=QtModuleName)
 if QtModuleName == 'PyQt5':
 	from PyQt5 import QtWidgets
 	QApplication = QtWidgets.QApplication
