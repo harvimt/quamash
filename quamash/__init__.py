@@ -470,7 +470,7 @@ class _QEventLoop:
 
 	def call_soon_threadsafe(self, callback, *args, context=None):
 		"""Thread-safe version of call_soon."""
-		self.__call_soon_signal.emit(callback, args, context=context)
+		self.__call_soon_signal.emit(callback, args)
 
 	def run_in_executor(self, executor, callback, *args):
 		"""Run callback in executor.
