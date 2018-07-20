@@ -17,7 +17,7 @@ setup(
 	url=quamash.__url__,
 	author=', '.join(authors),
 	author_email=', '.join(emails),
-	packages=['quamash', ],
+	packages=['quamash'],
 	license=quamash.__license__,
 	description=quamash.__doc__,
 	long_description=long_description,
