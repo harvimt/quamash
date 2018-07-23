@@ -114,6 +114,9 @@ Usage
 Changelog
 =========
 
+Version 0.6.1
+* Python 3.7 support (no automated test coverage)
+
 Version 0.6.0
 -------------
 * Lots of bugfixes and performance improvements.
