@@ -5,7 +5,7 @@
 """UNIX specific Quamash functionality."""
 
 import asyncio
-from asyncio import selectors
+import selectors
 import collections
 
 from . import QtCore, with_logger
