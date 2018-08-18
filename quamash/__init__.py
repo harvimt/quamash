@@ -29,7 +29,7 @@ else:
 	QtModule = importlib.import_module(QtModuleName)
 
 if not QtModule:
-	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
+	for QtModuleName in ('PyQt5', 'PySide2', 'PyQt4', 'PySide'):
 		try:
 			QtModule = importlib.import_module(QtModuleName)
 		except ImportError:
@@ -44,8 +44,9 @@ logger.info('Using Qt Implementation: {}'.format(QtModuleName))
 QtCore = importlib.import_module(QtModuleName + '.QtCore', package=QtModuleName)
 QtGui = importlib.import_module(QtModuleName + '.QtGui', package=QtModuleName)
 if QtModuleName == 'PyQt5':
-	from PyQt5 import QtWidgets
-	QApplication = QtWidgets.QApplication
+	from PyQt5.QtWidgets import QApplication
+elif QtModuleName == 'PySide2':
+	from PySide2.QtWidgets import QApplication
 else:
 	QApplication = QtGui.QApplication
 

@@ -39,7 +39,7 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 
 Requirements
 ============
-Quamash requires Python 3.4 or Python 3.3 with the backported ``asyncio`` library and either PyQt4, PyQt5 or PySide.
+Quamash requires Python >=3.4 with the backported ``asyncio`` library and either PyQt4, PyQt5, PySide or PySide2.
 
 Installation
 ============
@@ -115,6 +115,7 @@ Changelog
 =========
 
 Version 0.6.1
+-------------
 * Python 3.7 support (no automated test coverage)
 
 Version 0.6.0
@@ -216,30 +217,27 @@ Continuous Integration & Supported Platforms
 This project uses Travis CI to perform tests on linux (Ubuntu 12.04 LTS "Precise Pangolin") and
 Appveyor (Windows Server 2012 R2, similar to Windows 8) to perform continuous integration.
 
-On linux, Python 3.3 and 3.4 with PySide, PyQt4, and PyQt5 are tested. On windows, Python 3.4 with
-PySide, PyQt4 and PyQt5 are tested, but Python 3.3 is only tested with PySide since binary installers
-for PyQt are not provided for Python 3.3 (at least not the newest versions of PyQt), and compiling 
-from source probably isn't worth it.
-
-Python 3.5 is now tested on linux with PyQt4 and PyQt5.
-
 Testing Matrix
 ~~~~~~~~~~~~~~
 
 +----------------------+---------+---------+--------------+----------------+
 |                      | PyQt4   | PyQt5   | PySide (Qt4) | PySide 2 (Qt5) |
 +======================+=========+=========+==============+================+
-| Linux - Python 3.3   | yes     | yes     | yes          | planned        |
+| Linux - Python 3.3   | yes     | yes     | yes          | n/a            |
 +----------------------+---------+---------+--------------+----------------+
-| Linux - Python 3.4   | yes     | yes     | yes          | planned        |
+| Linux - Python 3.4   | yes     | yes     | yes          | n/a            |
 +----------------------+---------+---------+--------------+----------------+
-| Linux - Python 3.5   | yes     | yes     | n/a          | planned        |
+| Linux - Python 3.5   | yes     | yes     | n/a          | yes            |
 +----------------------+---------+---------+--------------+----------------+
-| Windows - Python 3.3 | no      | no      | yes          | no             |
+| Linux - Python 3.6   | yes     | yes     | n/a          | yes            |
 +----------------------+---------+---------+--------------+----------------+
-| Windows - Python 3.4 | yes     | yes     | yes          | planned        |
+| Windows - Python 3.3 | no      | no      | yes          | n/a            |
 +----------------------+---------+---------+--------------+----------------+
-| Windows - Python 3.5 | planned | planned | planned      | planned        |
+| Windows - Python 3.4 | yes     | yes     | yes          | n/a            |
++----------------------+---------+---------+--------------+----------------+
+| Windows - Python 3.5 | n/a     | yes     | n/a          | yes            |
++----------------------+---------+---------+--------------+----------------+
+| Windows - Python 3.6 | n/a     | yes     | n/a          | yes            |
 +----------------------+---------+---------+--------------+----------------+
 
 License
