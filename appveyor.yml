@@ -19,9 +19,9 @@ environment:
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "64"
-      QTIMPL: "PySide2"
-
-    - PYTHON: "C:\\Python35"
+      QTIMPL: "PyQt5"
+   
+    - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "64"
       QTIMPL: "PySide2"
