@@ -46,6 +46,7 @@ environment:
       PYTHON_ARCH: "32"
       QTIMPL: "PySide2"
 init:
+  - "ECHO %PATH%"
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH% %QTIMPL%"
 
 install:
