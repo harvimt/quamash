@@ -15,7 +15,7 @@ import asyncio
 import time
 import itertools
 from queue import Queue
-from concurrent.futures import Future
+from concurrent.futures import Future, Executor as ExecutorABC
 import logging
 import importlib
 logger = logging.getLogger('quamash')
@@ -102,7 +102,7 @@ class _QThreadWorker(QtCore.QThread):
 
 
 @with_logger
-class QThreadExecutor:
+class QThreadExecutor(ExecutorABC):
 
 	"""
 	ThreadExecutor that produces QThreads.
