@@ -195,64 +195,22 @@ First version worth using.
 
 Testing
 =======
-Quamash is tested with pytest_; in order to run the test suite, just install pytest
-and execute py.test on the commandline. The tests themselves are beneath the 'tests' directory.
+The full suite of tests can be run for the current platform with `tox`
 
-Testing can also be done with tox_. The current tox setup in tox.ini requires PyQT4/5 and PySide to
-be installed globally. (pip can't install PyQt into a virtualenv which is what tox will try to do).
-For this reason it may be good to run tox tests while specificying which environments to run. e.g.
-``tox -e py34-pyqt5`` to test python 3.4 with PyQt5. It is unlikely this tox configuration will
-work well on Windows especially since PyQt5 and PyQt4 cannot coexist in the same python installation
-on Windows. Also the PyQt4 w/ Qt5 oddity appears to be mostly a windows only thing too.
+If you have docker/docker-compose installed, `docker-compose run tox` will run the tests on linux (in docker).
 
-Style testing is also handled by tox. Run ``tox -e flake8``.
+Style testing is also handled by tox. Run ``tox -e flake8`` to run the style tests only.
 
-Code Coverage
--------------
-Getting a full coverage support is quite time consuming. In theory this could by done with `pytest-xdist`_,
-but I haven't had time to make that work. Install ``pytest-cov`` with ``pip install pytest-cov`` then
-run ``py.test --cov quamash`` then append a dot and an identifier the generated ``.coverage`` file. For example,
-``mv .coverage .coverage.nix.p33.pyside`` then repeat on all the platforms you want to run on. (at least linux
-and windows). Put all the ``.coverage.*`` files in one directory that also has quamash source code in it.
-``cd`` to that directory and run ``coverage combine`` finally run ``coverage html`` for html based reports
-or ``coverage report`` for a simple report. These last commands may fail with errors about not being able to
-find source code. Use the ``.coveragerc`` file to specify equivelant paths.  The default configuration has linux
-source code in ``/quamash`` and windows source at ``C:\quamash``.
 
 Continuous Integration & Supported Platforms
 --------------------------------------------
-This project uses Travis CI to perform tests on linux (Ubuntu 12.04 LTS "Precise Pangolin") and
-Appveyor (Windows Server 2012 R2, similar to Windows 8) to perform continuous integration.
+This project uses Travis CI to perform tests on linux and
+Appveyor  to perform continuous integration.
 
-On linux, Python 3.3 and 3.4 with PySide, PyQt4, and PyQt5 are tested. On windows, Python 3.4 with
-PySide, PyQt4 and PyQt5 are tested, but Python 3.3 is only tested with PySide since binary installers
-for PyQt are not provided for Python 3.3 (at least not the newest versions of PyQt), and compiling 
-from source probably isn't worth it.
-
-Python 3.5 is now tested on linux with PyQt4 and PyQt5.
-
-Testing Matrix
-~~~~~~~~~~~~~~
-
-+----------------------+---------+---------+--------------+----------------+
-|                      | PyQt4   | PyQt5   | PySide (Qt4) | PySide 2 (Qt5) |
-+======================+=========+=========+==============+================+
-| Linux - Python 3.3   | yes     | yes     | yes          | planned        |
-+----------------------+---------+---------+--------------+----------------+
-| Linux - Python 3.4   | yes     | yes     | yes          | planned        |
-+----------------------+---------+---------+--------------+----------------+
-| Linux - Python 3.5   | yes     | yes     | n/a          | planned        |
-+----------------------+---------+---------+--------------+----------------+
-| Windows - Python 3.3 | no      | no      | yes          | no             |
-+----------------------+---------+---------+--------------+----------------+
-| Windows - Python 3.4 | yes     | yes     | yes          | planned        |
-+----------------------+---------+---------+--------------+----------------+
-| Windows - Python 3.5 | planned | planned | planned      | planned        |
-+----------------------+---------+---------+--------------+----------------+
 
 License
 =======
-You may use, modify, and redistribute this software under the terms of the `BSD License`_.
+You may use, modify, and redistribute this software under the terms of the `BSD 2 Clause License`_.
 See LICENSE.
 
 Name
@@ -262,7 +220,7 @@ starts with a "Q".
 
 .. _`PEP 3156`: http://python.org/dev/peps/pep-3156/
 .. _`pytest`: http://pytest.org
-.. _`BSD License`: http://opensource.org/licenses/BSD-2-Clause
+.. _`BSD 2 Clause License`: http://opensource.org/licenses/BSD-2-Clause
 .. _tox: https://tox.readthedocs.org/
 .. _pytest-xdist: https://pypi.python.org/pypi/pytest-xdist
 .. _#31: https://github.com/harvimt/quamash/issues/31
