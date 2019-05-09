@@ -21,7 +21,7 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
     :target: https://pypi.python.org/pypi/quamash/
     :alt: License
 
-.. image:: https://img.shields.io/pypi/status/Django.svg
+.. image:: https://img.shields.io/pypi/status/quamash.svg
     :target: https://pypi.python.org/pypi/quamash/
     :alt: Development Status
 
@@ -39,7 +39,7 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
 
 Requirements
 ============
-Quamash requires Python 3.4 or Python 3.3 with the backported ``asyncio`` library and either PyQt4, PyQt5 or PySide.
+Quamash requires Python 3.6 or later with PyQt5 or PySide2.
 
 Installation
 ============
@@ -113,6 +113,17 @@ Usage
 
 Changelog
 =========
+
+Version 0.7.0
+* Dropped support for Python 3.3, 3.4, and 3.5
+* Dropped support for PyQt4 and PySide
+* Added support for PySide2
+* Tests now uses `tox` and wheels, no weird dependency management.
+* Now uses poetry to manage deps (though this transparent to users, who can use whatever)
+* setup.py no longer imports the package
+
+Version 0.6.1
+* Python 3.7 support (no automated test coverage)
 
 Version 0.6.0
 -------------

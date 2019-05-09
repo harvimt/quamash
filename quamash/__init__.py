@@ -3,10 +3,6 @@
 # BSD License
 """Implementation of the PEP 3156 Event-Loop with Qt."""
 
-__author__ = 'Mark Harviston <mark.harviston@gmail.com>, Arve Knudsen <arve.knudsen@gmail.com>'
-__version__ = '0.6.0'
-__url__ = 'https://github.com/harvimt/quamash'
-__license__ = 'BSD'
 __all__ = ['QEventLoop', 'QThreadExecutor']
 
 import sys
@@ -17,6 +13,7 @@ import itertools
 from queue import Queue
 from concurrent.futures import Future
 import logging
+import importlib
 logger = logging.getLogger('quamash')
 
 try:
@@ -25,12 +22,12 @@ except KeyError:
 	QtModule = None
 else:
 	logger.info('Forcing use of {} as Qt Implementation'.format(QtModuleName))
-	QtModule = __import__(QtModuleName)
+	QtModule = importlib.import_module(QtModuleName)
 
 if not QtModule:
 	for QtModuleName in ('PyQt5', 'PySide2', 'PyQt4', 'PySide'):
 		try:
-			QtModule = __import__(QtModuleName)
+			QtModule = importlib.import_module(QtModuleName)
 		except ImportError:
 			continue
 		else:
@@ -272,7 +269,7 @@ class _QEventLoop:
 	def run_until_complete(self, future):
 		"""Run until Future is complete."""
 		self._logger.debug('Running {} until complete'.format(future))
-		future = asyncio.async(future, loop=self)
+		future = asyncio.ensure_future(future, loop=self)
 
 		def stop(*args): self.stop()  # noqa
 		future.add_done_callback(stop)
@@ -328,7 +325,7 @@ class _QEventLoop:
 		self._read_notifiers = None
 		self._write_notifiers = None
 
-	def call_later(self, delay, callback, *args):
+	def call_later(self, delay, callback, *args, context=None):
 		"""Register callback to be invoked after a certain delay."""
 		if asyncio.iscoroutinefunction(callback):
 			raise TypeError("coroutines cannot be used with call_later")
@@ -338,18 +335,21 @@ class _QEventLoop:
 		self._logger.debug(
 			'Registering callback {} to be invoked with arguments {} after {} second(s)'
 			.format(callback, args, delay))
+
+		if sys.version_info >= (3, 7):
+			return self._add_callback(asyncio.Handle(callback, args, self, context=context), delay)
 		return self._add_callback(asyncio.Handle(callback, args, self), delay)
 
 	def _add_callback(self, handle, delay=0):
 		return self._timer.add_callback(handle, delay)
 
-	def call_soon(self, callback, *args):
+	def call_soon(self, callback, *args, context=None):
 		"""Register a callback to be run on the next iteration of the event loop."""
-		return self.call_later(0, callback, *args)
+		return self.call_later(0, callback, *args, context=context)
 
-	def call_at(self, when, callback, *args):
+	def call_at(self, when, callback, *args, context=None):
 		"""Register callback to be invoked at a certain time."""
-		return self.call_later(when - self.time(), callback, *args)
+		return self.call_later(when - self.time(), callback, *args, context=context)
 
 	def time(self):
 		"""Get time according to event loop's clock."""
@@ -464,7 +464,7 @@ class _QEventLoop:
 
 	# Methods for interacting with threads.
 
-	def call_soon_threadsafe(self, callback, *args):
+	def call_soon_threadsafe(self, callback, *args, context=None):
 		"""Thread-safe version of call_soon."""
 		self.__call_soon_signal.emit(callback, args)
 
