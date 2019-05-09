@@ -1,50 +1,30 @@
 environment:
-
   matrix:
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "64"
-      QTIMPL: "PySide"
+    # Python 3.6, 64-bit
+    - TOXENV: "py36"
+      TOX_APPVEYOR_X64=1
 
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "64"
-      QTIMPL: "PyQt4"
+    # Python 3.6, 32-bit
+    - TOXENV: "py36"
+      TOX_APPVEYOR_X64=0
+      
+    # Python 3.7, 64-bit
+    - TOXENV: "py37"
+      TOX_APPVEYOR_X64=1
 
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "64"
-      QTIMPL: "PyQt5"
-   
-    - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5.x"
-      PYTHON_ARCH: "64"
-      QTIMPL: "PyQt4"
+    # Python 3.7, 32-bit
+    - TOXENV: "py37"
+      TOX_APPVEYOR_X64=0
 
-    - PYTHON: "C:\\Python36-x64"
-      PYTHON_VERSION: "3.6.x"
-      PYTHON_ARCH: "64"
-      QTIMPL: "PyQt4"
 
-    - PYTHON: "C:\\Python36-x64"
-      PYTHON_VERSION: "3.6.x"
-      PYTHON_ARCH: "64"
-      QTIMPL: "PyQt5"
-
-    - PYTHON: "C:\\Python36"
-      PYTHON_VERSION: "3.6.x"
-      PYTHON_ARCH: "32"
-      QTIMPL: "PyQt5"
-init:
-  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH% %QTIMPL%"
+# For the sections below, the Python version doesn't matter:
+# tox will make an environment based on the environment variables.
 
 install:
-  - "powershell appveyor\\install.ps1"
-
-build: off
+  - "build.cmd py -3.7 -m pip install wheel tox tox-appveyor"
 
 test_script:
-  - "%PYTHON%\\Scripts\\py.test.exe"
+  - "build.cmd py -3.7 -m tox"
 
 notifications:
   - provider: Webhook
