@@ -16,6 +16,8 @@ environment:
     - TOXENV: "py37"
       TOX_APPVEYOR_X64: 0
 
+# turn off msbuild
+build: off
 
 # For the sections below, the Python version doesn't matter:
 # tox will make an environment based on the environment variables.
