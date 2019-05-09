@@ -21,10 +21,10 @@ environment:
 # tox will make an environment based on the environment variables.
 
 install:
-  - "build.cmd py -3.7 -m pip install wheel tox tox-appveyor"
+  - "py -m pip install wheel tox tox-appveyor"
 
 test_script:
-  - "build.cmd py -3.7 -m tox"
+  - "py -m tox"
 
 notifications:
   - provider: Webhook
