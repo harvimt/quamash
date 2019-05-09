@@ -28,6 +28,7 @@ pep8-naming = "^0.8.2"
 flake8-docstrings = "^1.3"
 flake8-debugger = "^3.1"
 tox = "^3.9"
+pytest = "^4.4"
 
 [build-system]
 requires = ["poetry>=0.12"]
