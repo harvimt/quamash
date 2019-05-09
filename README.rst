@@ -21,7 +21,7 @@ Implementation of the `PEP 3156`_ Event-Loop with Qt
     :target: https://pypi.python.org/pypi/quamash/
     :alt: License
 
-.. image:: https://img.shields.io/pypi/status/Django.svg
+.. image:: https://img.shields.io/pypi/status/quamash.svg
     :target: https://pypi.python.org/pypi/quamash/
     :alt: Development Status
 
