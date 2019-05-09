@@ -44,3 +44,5 @@ htmlcov/
 
 # VSCode
 .vscode
+/.pytest_cache
+/poetry.lock
