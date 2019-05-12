@@ -40,8 +40,10 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
 			try:
 				self._logger.debug('Invoking event callback {}'.format(callback))
 				value = callback(transferred, key, ov)
-			except OSError:
+			except OSError as e:
 				self._logger.warning('Event callback failed', exc_info=sys.exc_info())
+				if not f.done():
+					f.set_exception(e)
 			else:
 				f.set_result(value)
 
