@@ -47,7 +47,8 @@ if QtModuleName == 'PyQt5':
 	from PyQt5 import QtWidgets
 	QApplication = QtWidgets.QApplication
 else:
-	QApplication = QtGui.QApplication
+	from PySide2 import QtWidgets
+	QApplication = QtWidgets.QApplication
 
 
 from ._common import with_logger
