@@ -20,6 +20,9 @@ python = "^3.6"
 pyside2 = {version = "^5.12",optional = true}
 PyQt5 = {version = "^5.12",optional = true}
 
+[tool.poetry.extras]
+pyside2 = ["pyside2"]
+pyqt5 = ["PyQt5"]
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7"
