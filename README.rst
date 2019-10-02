@@ -43,7 +43,18 @@ Quamash requires Python 3.6 or later with PyQt5 or PySide2.
 
 Installation
 ============
+Quamash without dependencies:
+
 ``pip install quamash``
+
+Quamash with PySide2 dependency for use in a PySide2 project:
+
+``pip install quamash[pyside2]``
+
+Quamash with PyQT5 dependency for use in a PyQT5 project:
+
+``pip install quamash[pyqt5]``
+
 
 Upgrade from Version 0.4 to 0.5
 ===============================
@@ -113,22 +124,22 @@ Usage
 
 Changelog
 =========
-
 Version 0.7.0
-* Dropped support for Python 3.3, 3.4, and 3.5
-* Dropped support for PyQt4 and PySide
-* Added support for PySide2
-* Tests now uses `tox` and wheels, no weird dependency management.
-* Now uses poetry to manage deps (though this transparent to users, who can use whatever)
+-------------
+* Dropped support for Python 3.3, 3.4, and 3.5 
+* Dropped support for PyQt4 and PySide 
+* Added support for PySide2 
+* Tests now uses `tox` and wheels, no weird dependency management. 
+* Now uses poetry to manage deps (though this transparent to users, who can use whatever) 
 * setup.py no longer imports the package
 
 Version 0.6.1
+-------------
 * Python 3.7 support (no automated test coverage)
 
 Version 0.6.0
 -------------
 * Lots of bugfixes and performance improvements.
-
 
 Version 0.5.5
 -------------
