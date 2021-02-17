@@ -173,7 +173,7 @@ Version 0.4
   - cross platform/configuration tests
 
 * Bug #13 discovered and fixed
-* Force which Qt Implementation to use with ``QUQMASH_QTIMPL`` environment variable.
+* Force which Qt Implementation to use with ``QUAMASH_QTIMPL`` environment variable.
 * Implement ``QEventLoop.remove_reader`` and ``QEventLoop.remove_writer``
 * PyQt4 Support
 * PyQt5 Support
