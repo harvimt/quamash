@@ -1,71 +1,10 @@
+sudo: false
 language: python
 python:
-  - "3.4"
-  - "3.5"
   - "3.6"
-before_install:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
-  # Cached Downloads
-  - sudo mkdir -p /downloads
-  - sudo chmod a+rw /downloads
-  - if [ ! -f /downloads/sip.tar.gz ];   then curl -L -o /downloads/sip.tar.gz https://sourceforge.net/projects/pyqt/files/sip/sip-4.19.3/sip-4.19.3.tar.gz; fi
-  - if [ ! -f /downloads/pyqt4.tar.gz ]; then curl -L -o /downloads/pyqt4.tar.gz https://sourceforge.net/projects/pyqt/files/PyQt4/PyQt-4.12.1/PyQt4_gpl_x11-4.12.1.tar.gz; fi
-  - if [ ! -f /downloads/pyqt5.tar.gz ]; then curl -L -o /downloads/pyqt5.tar.gz https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.9/PyQt5_gpl-5.9.tar.gz; fi
-  - echo '4708187f74a4188cb4e294060707106f  /downloads/sip.tar.gz' | md5sum -c -
-  - echo '0112e15858cd7d318a09e7366922f874  /downloads/pyqt4.tar.gz' | md5sum -c -
-  - echo 'a409ac0d65ead9178b90c2822759a84b  /downloads/pyqt5.tar.gz' | md5sum -c -
-  # Builds
-  - sudo mkdir -p /builds
-  - sudo chmod a+rw /builds
-install:
-  # Qt4
-  - sudo apt-get update
-  - sudo apt-get install -y libqt4-dev
-  # Qt5
-  - sudo add-apt-repository -y ppa:beineri/opt-qt591-trusty
-  - sudo apt-get update
-  - sudo apt-get install -y qt59base
-  # Builds
-  - pushd /builds
-  # SIP
-  - tar xzf /downloads/sip.tar.gz --keep-newer-files
-  - pushd sip-4.19.3
-  - python configure.py
-  - make
-  - sudo make install
-  - popd
-  # PyQt4
-  - tar xzf /downloads/pyqt4.tar.gz --keep-newer-files
-  - pushd PyQt4_gpl_x11-4.12.1
-  - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui
-  - make
-  - sudo make install
-  - popd
-  # PyQt5
-  - source /opt/qt59/bin/qt59-env.sh  # switch to Qt5
-  - tar xzf /downloads/pyqt5.tar.gz --keep-newer-files
-  - pushd PyQt5_gpl-5.9
-  - python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets
-  - make
-  - sudo make install
-  - popd
-  # Builds Complete
-  - popd
-  # PySide
-  - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then pip install --find-links wheelhouse/ pyside; fi
-  # flake8 style checker
-  - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout flake8-commas
-script:
-  - flake8
-  - flake8 --select=D1 quamash/*.py
-  - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6']; then QUAMASH_QTIMPL=PySide py.test; fi
-  - QUAMASH_QTIMPL=PyQt4 py.test
-  - QUAMASH_QTIMPL=PyQt5 py.test
-cache:
-  directories:
-    - /downloads
-  apt: true
+  - "3.7"
+install: pip install tox-travis
+script: tox
 notifications:
   webhooks:
     urls:
