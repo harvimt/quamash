@@ -54,12 +54,15 @@ install:
   - popd
   # PySide
   - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then pip install --find-links wheelhouse/ pyside; fi
+  # PySide2
+  - if [ $TRAVIS_PYTHON_VERSION != '3.4' ]; then pip install pyside2; fi
   # flake8 style checker
   - pip install flake8 pep8-naming flake8-debugger flake8-docstrings pytest-timeout flake8-commas
 script:
   - flake8
   - flake8 --select=D1 quamash/*.py
-  - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6']; then QUAMASH_QTIMPL=PySide py.test; fi
+  - if [ $TRAVIS_PYTHON_VERSION != '3.5' && $TRAVIS_PYTHON_VERSION != '3.6' ]; then QUAMASH_QTIMPL=PySide py.test; fi
+  - if [ $TRAVIS_PYTHON_VERSION != '3.4' ]; then QUAMASH_QTIMPL=PySide2 py.test; fi
   - QUAMASH_QTIMPL=PyQt4 py.test
   - QUAMASH_QTIMPL=PyQt5 py.test
 cache:
