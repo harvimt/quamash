@@ -8,7 +8,7 @@ import asyncio
 import selectors
 import typing
 
-from . import QtCore, with_logger
+from ._init import QtCore, with_logger
 
 
 EVENT_READ = (1 << 0)
