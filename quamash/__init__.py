@@ -29,7 +29,7 @@ else:
 	QtModule = importlib.import_module(QtModuleName)
 
 if not QtModule:
-	for QtModuleName in ('PyQt5', 'PyQt4', 'PySide'):
+	for QtModuleName in ('PyQt6', 'PyQt5', 'PyQt4', 'PySide'):
 		try:
 			QtModule = importlib.import_module(QtModuleName)
 		except ImportError:
@@ -45,6 +45,9 @@ QtCore = importlib.import_module(QtModuleName + '.QtCore', package=QtModuleName)
 QtGui = importlib.import_module(QtModuleName + '.QtGui', package=QtModuleName)
 if QtModuleName == 'PyQt5':
 	from PyQt5 import QtWidgets
+	QApplication = QtWidgets.QApplication
+elif QtModuleName == 'PyQt6':
+	from PyQt6 import QtWidgets
 	QApplication = QtWidgets.QApplication
 else:
 	QApplication = QtGui.QApplication
@@ -263,7 +266,7 @@ class _QEventLoop:
 
 		try:
 			self._logger.debug('Starting Qt event loop')
-			rslt = self.__app.exec_()
+			rslt = self.__app.exec()
 			self._logger.debug('Qt event loop ended with result {}'.format(rslt))
 			return rslt
 		finally:
@@ -373,7 +376,7 @@ class _QEventLoop:
 			existing.activated.disconnect()
 			# will get overwritten by the assignment below anyways
 
-		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Read)
+		notifier = QtCore.QSocketNotifier(fd, QtCore.QSocketNotifier.Type.Read)
 		notifier.setEnabled(True)
 		self._logger.debug('Adding reader callback for file descriptor {}'.format(fd))
 		notifier.activated.connect(

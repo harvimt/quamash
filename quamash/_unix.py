@@ -6,10 +6,7 @@
 
 import asyncio
 import selectors
-try:
-	from collections import Mapping
-except ImportError:
-	from collections.abc import Mapping
+import collections
 
 from . import QtCore, with_logger
 
@@ -44,7 +41,7 @@ def _fileobj_to_fd(fileobj):
 	return fd
 
 
-class _SelectorMapping(Mapping):
+class _SelectorMapping(collections.Mapping):
 
 	"""Mapping of file objects to selector keys."""
 
@@ -111,11 +108,11 @@ class _Selector(selectors.BaseSelector):
 		self._fd_to_key[key.fd] = key
 
 		if events & EVENT_READ:
-			notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Read)
+			notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Type.Read)
 			notifier.activated.connect(self.__on_read_activated)
 			self.__read_notifiers[key.fd] = notifier
 		if events & EVENT_WRITE:
-			notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Write)
+			notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Type.Write)
 			notifier.activated.connect(self.__on_write_activated)
 			self.__write_notifiers[key.fd] = notifier
 
