@@ -6,7 +6,7 @@
 
 import asyncio
 import selectors
-import collections
+import typing
 
 from . import QtCore, with_logger
 
@@ -41,7 +41,7 @@ def _fileobj_to_fd(fileobj):
 	return fd
 
 
-class _SelectorMapping(collections.Mapping):
+class _SelectorMapping(typing.Mapping):
 
 	"""Mapping of file objects to selector keys."""
 
