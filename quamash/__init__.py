@@ -180,7 +180,11 @@ class _SimpleTimer(QtCore.QObject):
 		self._stopped = False
 
 	def add_callback(self, handle, delay=0):
-		timerid = self.startTimer(delay * 1000)
+		"""
+		delay should be in seconds(float or int), while
+		startTimer accepts milliseconds(int)
+		"""
+		timerid = self.startTimer(round(delay * 1000))
 		self._logger.debug("Registering timer id {0}".format(timerid))
 		assert timerid not in self.__callbacks
 		self.__callbacks[timerid] = handle
